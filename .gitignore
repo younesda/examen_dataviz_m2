@@ -1,0 +1,14 @@
+﻿# Repository ignore rules
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+.env
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+ruff_cache/
+.DS_Store
+Thumbs.db
