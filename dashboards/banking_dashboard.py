@@ -44,15 +44,18 @@ NUMERIC_COLUMNS = [
     "agence",
     "compte",
 ]
-SUM_COLUMNS = [
+SNAPSHOT_SUM_COLUMNS = [
     "bilan",
     "ressources",
     "fonds_propres",
+    "compte",
+]
+FLOW_SUM_COLUMNS = [
     "produit_net_bancaire",
     "resultat_exploitation",
     "resultat_net",
-    "compte",
 ]
+SUM_COLUMNS = [*SNAPSHOT_SUM_COLUMNS, *FLOW_SUM_COLUMNS]
 AVERAGE_COLUMNS = ["effectif", "agence"]
 BANKING_LABELS = {
     "company": "Bank",
@@ -141,6 +144,86 @@ def _prepare_banking_dataframe(dataframe: pd.DataFrame) -> pd.DataFrame:
 
 
 
+def _select_latest_year_snapshot(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Keep only the latest available year inside the current filter scope.
+
+    Purpose:
+        Prevent stock metrics such as total assets or equity from being summed
+        across multiple fiscal years when the dashboard is viewed on "All years".
+
+    Inputs:
+        dataframe: Filtered banking DataFrame.
+
+    Outputs:
+        The latest-year slice of the provided DataFrame when possible.
+    """
+
+    if dataframe.empty or "year" not in dataframe.columns:
+        return dataframe.copy()
+
+    with_years = dataframe.dropna(subset=["year"]).copy()
+    if with_years.empty:
+        return dataframe.copy()
+
+    latest_year = with_years["year"].max()
+    return with_years[with_years["year"] == latest_year].copy()
+
+
+
+def _aggregate_company_metrics(
+    dataframe: pd.DataFrame,
+    sum_columns: list[str],
+    average_columns: list[str],
+) -> pd.DataFrame:
+    """Aggregate company metrics with explicit sum and mean strategies.
+
+    Purpose:
+        Reuse one null-aware grouping helper for both stock snapshots and
+        multi-year flow metrics.
+
+    Inputs:
+        dataframe: Banking DataFrame already filtered to the desired scope.
+        sum_columns: Numeric columns aggregated with a sum.
+        average_columns: Numeric columns aggregated with a mean.
+
+    Outputs:
+        A company-level aggregated DataFrame.
+    """
+
+    if dataframe.empty or "company" not in dataframe.columns:
+        return pd.DataFrame(columns=["company", *sum_columns, *average_columns])
+
+    aggregation_map: dict[str, Any] = {}
+    for column in sum_columns:
+        if column in dataframe.columns:
+            aggregation_map[column] = _sum_with_min_count
+    for column in average_columns:
+        if column in dataframe.columns:
+            aggregation_map[column] = _mean_with_min_count
+
+    if not aggregation_map:
+        return (
+            dataframe[["company"]]
+            .drop_duplicates()
+            .sort_values("company", kind="stable")
+            .reset_index(drop=True)
+        )
+
+    aggregated = (
+        dataframe.groupby("company", dropna=True, as_index=False)
+        .agg(aggregation_map)
+        .sort_values("company", kind="stable")
+        .reset_index(drop=True)
+    )
+
+    for column in [*sum_columns, *average_columns]:
+        if column in aggregated.columns:
+            aggregated[column] = pd.to_numeric(aggregated[column], errors="coerce")
+
+    return aggregated
+
+
+
 def _aggregate_by_company(dataframe: pd.DataFrame) -> pd.DataFrame:
     """Aggregate the filtered banking data at bank level.
 
@@ -158,20 +241,19 @@ def _aggregate_by_company(dataframe: pd.DataFrame) -> pd.DataFrame:
     if dataframe.empty or "company" not in dataframe.columns:
         return pd.DataFrame(columns=["company", *SUM_COLUMNS, *AVERAGE_COLUMNS])
 
-    aggregation_map: dict[str, Any] = {}
-    for column in SUM_COLUMNS:
-        if column in dataframe.columns:
-            aggregation_map[column] = _sum_with_min_count
-    for column in AVERAGE_COLUMNS:
-        if column in dataframe.columns:
-            aggregation_map[column] = _mean_with_min_count
-
-    aggregated = (
-        dataframe.groupby("company", dropna=True, as_index=False)
-        .agg(aggregation_map)
-        .sort_values("company", kind="stable")
-        .reset_index(drop=True)
+    latest_year_snapshot = _select_latest_year_snapshot(dataframe)
+    snapshot_summary = _aggregate_company_metrics(
+        latest_year_snapshot,
+        sum_columns=SNAPSHOT_SUM_COLUMNS,
+        average_columns=AVERAGE_COLUMNS,
     )
+    flow_summary = _aggregate_company_metrics(
+        dataframe,
+        sum_columns=FLOW_SUM_COLUMNS,
+        average_columns=[],
+    )
+
+    aggregated = snapshot_summary.merge(flow_summary, on="company", how="outer")
 
     for column in [*SUM_COLUMNS, *AVERAGE_COLUMNS]:
         if column in aggregated.columns:
@@ -227,6 +309,37 @@ def _aggregate_by_company_and_year(dataframe: pd.DataFrame) -> pd.DataFrame:
 
     aggregated["year"] = aggregated["year"].astype(int)
     return aggregated
+
+
+
+def _format_kpi_metric(
+    dataframe: pd.DataFrame,
+    metric_column: str,
+    *,
+    snapshot_latest_year: bool = False,
+    suffix: str = " FCFA",
+) -> str:
+    """Format one KPI metric from either the full selection or its latest year.
+
+    Purpose:
+        Keep the main callback readable while making stock-vs-flow KPI behavior
+        explicit and testable.
+
+    Inputs:
+        dataframe: Filtered banking DataFrame.
+        metric_column: Numeric column to aggregate.
+        snapshot_latest_year: Whether the KPI should use the latest-year slice.
+        suffix: Text appended to the formatted KPI.
+
+    Outputs:
+        A human-readable KPI string.
+    """
+
+    source_frame = _select_latest_year_snapshot(dataframe) if snapshot_latest_year else dataframe
+    if source_frame.empty or metric_column not in source_frame.columns:
+        return "N/A"
+
+    return format_number(source_frame[metric_column].sum(min_count=1), suffix=suffix)
 
 
 
@@ -759,22 +872,10 @@ def register_banking_callbacks(app: Dash, dataframe: pd.DataFrame) -> None:
         company_summary = _aggregate_by_company(filtered)
         company_year_summary = _aggregate_by_company_and_year(filtered)
 
-        total_assets = format_number(filtered["bilan"].sum(min_count=1), suffix=" FCFA") if "bilan" in filtered.columns and not filtered.empty else "N/A"
-        total_funds = (
-            format_number(filtered["fonds_propres"].sum(min_count=1), suffix=" FCFA")
-            if "fonds_propres" in filtered.columns and not filtered.empty
-            else "N/A"
-        )
-        total_pnb = (
-            format_number(filtered["produit_net_bancaire"].sum(min_count=1), suffix=" FCFA")
-            if "produit_net_bancaire" in filtered.columns and not filtered.empty
-            else "N/A"
-        )
-        total_net_result = (
-            format_number(filtered["resultat_net"].sum(min_count=1), suffix=" FCFA")
-            if "resultat_net" in filtered.columns and not filtered.empty
-            else "N/A"
-        )
+        total_assets = _format_kpi_metric(filtered, "bilan", snapshot_latest_year=True)
+        total_funds = _format_kpi_metric(filtered, "fonds_propres", snapshot_latest_year=True)
+        total_pnb = _format_kpi_metric(filtered, "produit_net_bancaire")
+        total_net_result = _format_kpi_metric(filtered, "resultat_net")
 
         return (
             total_assets,

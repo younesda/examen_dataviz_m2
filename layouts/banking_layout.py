@@ -236,8 +236,8 @@ def create_banking_layout(
             ),
             dbc.Row(
                 [
-                    _build_kpi_card("banking-kpi-total-assets", "Total Assets", "Aggregate bilan across the current selection."),
-                    _build_kpi_card("banking-kpi-total-funds", "Total Fonds Propres", "Capital base supporting the selected perimeter."),
+                    _build_kpi_card("banking-kpi-total-assets", "Total Assets", "Latest-year asset snapshot for the current selection."),
+                    _build_kpi_card("banking-kpi-total-funds", "Total Fonds Propres", "Latest-year equity snapshot for the current selection."),
                     _build_kpi_card("banking-kpi-pnb", "Produit Net Bancaire", "Commercial banking revenue generated in scope."),
                     _build_kpi_card("banking-kpi-net-result", "Resultat Net", "Bottom-line performance for the filtered banks."),
                 ],
