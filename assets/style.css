@@ -238,3 +238,100 @@ body {
         padding: 1rem;
     }
 }
+
+.metric-helper {
+    margin: 0.65rem 0 0;
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    margin-bottom: 0.35rem;
+}
+
+.section-subtitle {
+    color: var(--muted);
+    margin-bottom: 1rem;
+}
+
+.graph-card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.35rem;
+}
+
+.analytics-shell .card-body,
+.ranking-card .card-body {
+    padding: 1.25rem;
+}
+
+.analytics-tabs {
+    margin-top: 1rem;
+}
+
+.analytics-tabs .nav-tabs {
+    border-bottom: 1px solid var(--border);
+    gap: 0.55rem;
+}
+
+.analytics-tabs .nav-link {
+    border: 1px solid transparent;
+    border-radius: 14px;
+    color: var(--muted);
+    background: rgba(15, 23, 42, 0.55);
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+}
+
+.analytics-tabs .nav-link:hover,
+.analytics-tabs .nav-link:focus {
+    color: var(--text);
+    border-color: rgba(56, 189, 248, 0.26);
+}
+
+.analytics-tabs .nav-link.active {
+    color: var(--text);
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.22), rgba(14, 165, 233, 0.10));
+    border-color: rgba(56, 189, 248, 0.34);
+}
+
+.analytics-tabs .tab-content {
+    padding-top: 1rem;
+}
+
+.tab-row + .tab-row {
+    margin-top: 0.1rem;
+}
+
+.ranking-card .dash-table-container {
+    background: transparent;
+}
+
+.ranking-card .dash-spreadsheet-container,
+.ranking-card .dash-spreadsheet-inner {
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.ranking-card input,
+.ranking-card .dash-filter input {
+    background: #0f172a !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+@media (max-width: 767.98px) {
+    .analytics-tabs .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.35rem;
+    }
+
+    .analytics-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
