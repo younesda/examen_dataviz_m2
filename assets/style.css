@@ -1,0 +1,240 @@
+﻿:root {
+    --background: #0f172a;
+    --surface: #1e293b;
+    --surface-soft: #243449;
+    --accent: #38bdf8;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --border: rgba(148, 163, 184, 0.18);
+    --shadow: 0 18px 48px rgba(15, 23, 42, 0.28);
+    --radius: 22px;
+    --sidebar-width: 320px;
+    --font-base: "Bahnschrift", "Trebuchet MS", sans-serif;
+    --font-heading: "Aptos Display", "Bahnschrift", sans-serif;
+}
+
+html,
+body,
+#react-entry-point {
+    min-height: 100%;
+    margin: 0;
+    background:
+        radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.10), transparent 28%),
+        var(--background);
+    color: var(--text);
+    font-family: var(--font-base);
+}
+
+body {
+    overflow-x: hidden;
+}
+
+.app-root {
+    min-height: 100vh;
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    padding: 2rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: rgba(15, 23, 42, 0.82);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    min-height: 100vh;
+    backdrop-filter: blur(18px);
+}
+
+.sidebar-brand,
+.sidebar-footer,
+.filter-card,
+.metric-card,
+.graph-card,
+.page-alert,
+.status-banner {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(30, 41, 59, 0.84));
+    box-shadow: var(--shadow);
+}
+
+.sidebar-brand,
+.sidebar-footer {
+    padding: 1.25rem;
+}
+
+.sidebar-eyebrow,
+.page-eyebrow,
+.sidebar-footer-label {
+    display: inline-block;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.65rem;
+}
+
+.sidebar-title,
+.page-title {
+    font-family: var(--font-heading);
+    margin: 0;
+    color: var(--text);
+}
+
+.sidebar-title {
+    font-size: 1.85rem;
+}
+
+.page-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.sidebar-description,
+.sidebar-footer-text,
+.page-subtitle {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.sidebar-nav {
+    gap: 0.65rem;
+}
+
+.sidebar-link {
+    border-radius: 16px;
+    padding: 0.95rem 1rem;
+    color: var(--text);
+    background: rgba(30, 41, 59, 0.55);
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+
+.sidebar-link:hover,
+.sidebar-link.active {
+    color: var(--text);
+    background: rgba(56, 189, 248, 0.18);
+    border-color: rgba(56, 189, 248, 0.38);
+}
+
+.dashboard-content-shell {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.status-banner {
+    color: var(--text);
+    margin-bottom: 1.25rem;
+}
+
+.dashboard-container {
+    min-height: calc(100vh - 150px);
+}
+
+.dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.page-header {
+    padding: 1rem 0 0.2rem;
+}
+
+.page-alert.alert,
+.status-banner.alert {
+    color: var(--text);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.96), rgba(30, 41, 59, 0.84));
+    border-color: var(--border);
+    margin-top: 1rem;
+}
+
+.filter-card,
+.metric-card,
+.graph-card {
+    overflow: hidden;
+}
+
+.filter-card .card-body,
+.metric-card .card-body,
+.graph-card .card-body {
+    background: transparent;
+    color: var(--text);
+}
+
+.filter-label {
+    display: block;
+    margin-bottom: 0.55rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.metric-label {
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.65rem;
+    font-size: 0.9rem;
+}
+
+.metric-value {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2.1rem);
+    font-family: var(--font-heading);
+}
+
+.dashboard-dropdown .Select-control,
+.dashboard-dropdown .Select-menu-outer,
+.dashboard-dropdown .Select-menu,
+.dashboard-dropdown .Select-placeholder,
+.dashboard-dropdown .Select-value-label,
+.dashboard-dropdown .Select-input > input {
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+.dashboard-dropdown .Select-control {
+    border-radius: 14px !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: none !important;
+    min-height: 44px;
+}
+
+.dashboard-dropdown .Select-menu-outer {
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+}
+
+.dashboard-dropdown .VirtualizedSelectFocusedOption {
+    background: rgba(56, 189, 248, 0.18) !important;
+}
+
+.dashboard-graph {
+    min-height: 360px;
+}
+
+@media (max-width: 991.98px) {
+    .app-shell {
+        flex-direction: column;
+    }
+
+    .app-sidebar {
+        width: auto;
+        min-height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .dashboard-content-shell {
+        padding: 1rem;
+    }
+}
