@@ -15,77 +15,20 @@ LOGGER = logging.getLogger(__name__)
 
 MILLION_TO_FCFA = 1_000_000
 
-TARGET_BANKS: dict[str, dict[str, Any]] = {
-    "CBAO": {
-        "bank": "cbao",
-        "bank_name": "CBAO",
-        "aliases": ["CBAO", "CBAO, GROUPE ATTIJARIWAFA BANK"],
-    },
-    "SGBS": {
-        "bank": "societe_generale_senegal",
-        "bank_name": "Societe Generale Senegal",
-        "aliases": ["SGBS", "SGSN", "SOCIETE GENERALE SENEGAL"],
-    },
-    "ECOBANK": {
-        "bank": "ecobank_senegal",
-        "bank_name": "Ecobank Senegal",
-        "aliases": ["ECOBANK", "ECOBANK-SENEGAL"],
-    },
-    "BICIS": {
-        "bank": "bicis",
-        "bank_name": "BICIS",
-        "aliases": [
-            "BICIS",
-            "BANQUE INTERNATIONALE POUR LE COMMERCE ET L'INDUSTRIE DU SENEGAL",
-        ],
-    },
-    "ORABANK": {
-        "bank": "orabank_senegal",
-        "bank_name": "Orabank Senegal",
-        "aliases": ["ORABANK", "ORABANK COTE D IVOIRE SUCCURSALE DU SENEGAL"],
-    },
-    "BOA": {
-        "bank": "bank_of_africa_senegal",
-        "bank_name": "Bank Of Africa Senegal",
-        "aliases": ["BOA", "BOA-S", "BANK OF AFRICA-SENEGAL"],
-    },
-    "CBI": {
-        "bank": "coris_bank_international_senegal",
-        "bank_name": "Coris Bank International Senegal",
-        "aliases": [
-            "CBI",
-            "CBI-SENEGAL",
-            "CORIS BANK INTERNATIONAL-SENEGAL",
-            "CORIS BANQUE INTERNATIONAL-SENEGAL",
-        ],
-    },
-    "UBA": {
-        "bank": "uba_senegal",
-        "bank_name": "UBA Senegal",
-        "aliases": ["UBA", "U.B.A.", "UNITED BANK FOR AFRICA"],
-    },
-    "BSIC": {
-        "bank": "bsic_senegal",
-        "bank_name": "BSIC Senegal",
-        "aliases": [
-            "BSIC",
-            "BANQUE SAHELO-SAHARIENNE POUR L'INVESTISSEMENT ET LE COMMERCE",
-        ],
-    },
-    "BNDE": {
-        "bank": "bnde",
-        "bank_name": "BNDE",
-        "aliases": [
-            "BNDE",
-            "B.N.D.E",
-            "BANQUE NATIONALE POUR LE DEVELOPPEMENT ECONOMIQUE",
-        ],
-    },
-    "BHS": {
-        "bank": "bhs",
-        "bank_name": "Banque de l'Habitat du Senegal",
-        "aliases": ["BHS", "B.H.S.", "BANQUE DE L'HABITAT DU SENEGAL"],
-    },
+PDF_SIGLE_ALIAS_TO_CANONICAL = {
+    "SGSN": "SGBS",
+    "BOAS": "BOA",
+    "BCIMALI": "BCIM",
+    "CBISENEGAL": "CBI",
+    "BGFIBANK": "BGFI",
+    "CI": "CISA",
+}
+PDF_NON_BANK_IDENTIFIERS = {
+    "LOCAFRIQUE",
+    "ALIOSFINANCE",
+    "WAFACASH",
+    "LAFINAO",
+    "BBGCI",
 }
 
 IDENTIFIER_COLUMNS = ["sigle", "bank", "bank_name", "groupe_bancaire", "annee"]
@@ -210,6 +153,49 @@ def normalize_column_name(column_name: str) -> str:
     return correction_map.get(normalized, normalized)
 
 
+def normalize_identifier(value: Any) -> str:
+    """Normalize a bank code into a punctuation-free uppercase identifier."""
+
+    return normalize_text(value).replace(" ", "").upper()
+
+
+
+def slugify_identifier(value: Any) -> str:
+    """Build a stable snake_case slug from a bank identifier."""
+
+    return normalize_text(value).replace(" ", "_")
+
+
+
+def clean_sigle_label(value: Any) -> str:
+    """Clean a sigle label while preserving business punctuation when useful."""
+
+    cleaned = re.sub(r"\s+", " ", str(value)).strip().upper()
+    cleaned = re.sub(r"\s*-\s*", "-", cleaned)
+    cleaned = re.sub(r"\.+", ".", cleaned)
+    return cleaned.strip(". ")
+
+
+
+def clean_pdf_bank_name(value: Any) -> str:
+    """Normalize a bank legal name extracted from the BCEAO PDF header."""
+
+    cleaned = re.sub(r"\(\*\)", "", str(value))
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -*")
+    return cleaned
+
+
+
+def build_excel_sigle_lookup(excel_dataframe: pd.DataFrame) -> dict[str, str]:
+    """Map normalized Excel sigles back to their canonical workbook sigles."""
+
+    return {
+        normalize_identifier(sigle): str(sigle).strip().upper()
+        for sigle in excel_dataframe["sigle"].dropna().astype(str)
+    }
+
+
+
 def clean_numeric_value(value: Any) -> float | None:
     """Convert a raw numeric value into a Python float.
 
@@ -315,7 +301,7 @@ def load_bank_excel(excel_path: Path) -> pd.DataFrame:
 
     Purpose:
         Use the Excel workbook as the reference schema, clean the relevant
-        banking indicators, and keep only the target Senegal banks.
+        banking indicators, and preserve every bank available in the source.
 
     Inputs:
         excel_path: Path to ``BASE_SENEGAL2.xlsx``.
@@ -338,17 +324,15 @@ def load_bank_excel(excel_path: Path) -> pd.DataFrame:
 
     dataframe = dataframe[required_columns].copy()
     dataframe["sigle"] = dataframe["sigle"].astype(str).str.strip().str.upper()
-    dataframe = dataframe[dataframe["sigle"].isin(TARGET_BANKS)].copy()
+    dataframe = dataframe[dataframe["sigle"].ne("")].copy()
 
     for column in required_columns:
         if column not in {"sigle", "groupe_bancaire"}:
             dataframe[column] = dataframe[column].apply(clean_numeric_value)
 
     dataframe["annee"] = dataframe["annee"].astype("Int64")
-    dataframe["bank"] = dataframe["sigle"].map(lambda sigle: TARGET_BANKS[sigle]["bank"])
-    dataframe["bank_name"] = dataframe["sigle"].map(
-        lambda sigle: TARGET_BANKS[sigle]["bank_name"]
-    )
+    dataframe["bank"] = dataframe["sigle"].map(slugify_identifier)
+    dataframe["bank_name"] = dataframe["sigle"]
 
     for column in MONETARY_COLUMNS:
         dataframe[column] = dataframe[column].apply(
@@ -356,7 +340,11 @@ def load_bank_excel(excel_path: Path) -> pd.DataFrame:
         )
 
     dataframe["source_excel"] = True
-    LOGGER.info("Banking Excel preprocessing completed with %s rows.", len(dataframe))
+    LOGGER.info(
+        "Banking Excel preprocessing completed with %s rows across %s banks.",
+        len(dataframe),
+        dataframe["sigle"].nunique(),
+    )
     return dataframe
 
 
@@ -404,28 +392,42 @@ def extract_numeric_values_from_line(line: str, years_count: int) -> list[float 
     return numeric_values
 
 
-def identify_target_bank(page_text: str) -> str | None:
-    """Identify the target Senegal bank represented on a PDF page.
+def identify_target_bank(
+    lines: list[str],
+    excel_sigle_lookup: dict[str, str],
+) -> tuple[str | None, str | None]:
+    """Identify the canonical Senegal bank represented on a PDF page.
 
     Purpose:
-        Map the various BCEAO aliases and abbreviations back to the Excel
-        sigles used as the canonical join key.
+        Resolve the bank sigle shown in the PDF header, align it with the Excel
+        workbook sigles when possible, and skip non-bank institutions.
 
     Inputs:
-        page_text: Full text extracted from a PDF page.
+        lines: Text lines extracted from a single PDF page.
+        excel_sigle_lookup: Mapping of normalized Excel sigles to canonical sigles.
 
     Outputs:
-        The matching Excel sigle, or ``None`` when the page is not one of the
-        target banks.
+        A tuple containing the canonical sigle and a readable bank name.
     """
 
-    normalized_page = normalize_text(page_text)
+    if len(lines) < 4:
+        return None, None
 
-    for sigle, metadata in TARGET_BANKS.items():
-        if any(normalize_text(alias) in normalized_page for alias in metadata["aliases"]):
-            return sigle
+    raw_identifier = lines[1]
+    normalized_identifier = normalize_identifier(raw_identifier)
+    if normalize_text(raw_identifier).startswith(("banques", "etablissements")):
+        return None, None
+    if normalized_identifier in PDF_NON_BANK_IDENTIFIERS:
+        return None, None
 
-    return None
+    canonical_sigle = PDF_SIGLE_ALIAS_TO_CANONICAL.get(normalized_identifier)
+    if canonical_sigle is None:
+        canonical_sigle = excel_sigle_lookup.get(normalized_identifier)
+    if canonical_sigle is None:
+        canonical_sigle = clean_sigle_label(raw_identifier)
+
+    full_name = clean_pdf_bank_name(lines[3] if len(lines) > 3 else raw_identifier)
+    return canonical_sigle, full_name or canonical_sigle
 
 
 def extract_years_from_page(lines: list[str]) -> list[int]:
@@ -468,7 +470,8 @@ def is_target_senegal_page(lines: list[str]) -> bool:
 
 def parse_pdf_page_metrics(
     page_text: str,
-) -> tuple[str | None, str | None, dict[int, dict[str, float | None]]]:
+    excel_sigle_lookup: dict[str, str],
+) -> tuple[str | None, str | None, str | None, dict[int, dict[str, float | None]]]:
     """Parse the banking metrics needed from one BCEAO PDF page.
 
     Purpose:
@@ -477,15 +480,16 @@ def parse_pdf_page_metrics(
 
     Inputs:
         page_text: Full text extracted from a single PDF page.
+        excel_sigle_lookup: Mapping of normalized Excel sigles to canonical sigles.
 
     Outputs:
-        A tuple containing the Excel sigle, the page type and a year-indexed
-        dictionary of extracted metrics.
+        A tuple containing the canonical sigle, bank name, page type and a
+        year-indexed dictionary of extracted metrics.
     """
 
     lines = [line for line in page_text.splitlines() if line.strip()]
     if not is_target_senegal_page(lines):
-        return None, None, {}
+        return None, None, None, {}
 
     normalized_page = normalize_text(page_text)
     if "bilans" in normalized_page:
@@ -493,16 +497,16 @@ def parse_pdf_page_metrics(
     elif "comptes de resultat" in normalized_page:
         page_type = "resultats"
     else:
-        return None, None, {}
+        return None, None, None, {}
 
-    sigle = identify_target_bank(page_text)
+    sigle, bank_name = identify_target_bank(lines, excel_sigle_lookup)
     if sigle is None:
-        return None, None, {}
+        return None, None, None, {}
 
     years = extract_years_from_page(lines)
     if not years:
         LOGGER.warning("No year header detected for bank '%s' on one PDF page.", sigle)
-        return sigle, page_type, {}
+        return sigle, bank_name, page_type, {}
 
     metrics_by_year: dict[int, dict[str, float | None]] = {year: {} for year in years}
     expected_labels = PDF_LABEL_TO_COLUMN[page_type]
@@ -555,19 +559,23 @@ def parse_pdf_page_metrics(
 
         index += 1
 
-    return sigle, page_type, metrics_by_year
+    return sigle, bank_name, page_type, metrics_by_year
 
 
-def extract_pdf_bank_data(pdf_path: Path) -> pd.DataFrame:
+def extract_pdf_bank_data(
+    pdf_path: Path,
+    excel_dataframe: pd.DataFrame,
+) -> pd.DataFrame:
     """Extract target Senegal bank metrics from the BCEAO PDF.
 
     Purpose:
-        Read the BCEAO publication, keep only the target Senegal banks, convert
-        the amounts from millions of FCFA to FCFA, and return a merge-ready
-        annual DataFrame.
+        Read the BCEAO publication, keep every Senegal bank page, convert the
+        amounts from millions of FCFA to FCFA, and return a merge-ready annual
+        DataFrame.
 
     Inputs:
         pdf_path: Path to ``bilans_bceao.pdf``.
+        excel_dataframe: Clean Excel data used to align PDF sigles.
 
     Outputs:
         A DataFrame containing the extracted PDF metrics by bank and year.
@@ -575,11 +583,15 @@ def extract_pdf_bank_data(pdf_path: Path) -> pd.DataFrame:
 
     LOGGER.info("Extracting complementary banking data from '%s'.", pdf_path)
     records: dict[tuple[str, int], dict[str, Any]] = {}
+    excel_sigle_lookup = build_excel_sigle_lookup(excel_dataframe)
 
     with pdfplumber.open(str(pdf_path)) as pdf:
         for page_number, page in enumerate(pdf.pages, start=1):
             page_text = page.extract_text(layout=True) or ""
-            sigle, page_type, metrics_by_year = parse_pdf_page_metrics(page_text)
+            sigle, bank_name, page_type, metrics_by_year = parse_pdf_page_metrics(
+                page_text,
+                excel_sigle_lookup,
+            )
 
             if sigle is None or not metrics_by_year:
                 continue
@@ -590,12 +602,14 @@ def extract_pdf_bank_data(pdf_path: Path) -> pd.DataFrame:
                     record_key,
                     {
                         "sigle": sigle,
-                        "bank": TARGET_BANKS[sigle]["bank"],
-                        "bank_name": TARGET_BANKS[sigle]["bank_name"],
+                        "bank": slugify_identifier(sigle),
+                        "bank_name": bank_name or sigle,
                         "annee": year,
                         "source_pdf": True,
                     },
                 )
+                if bank_name:
+                    record["bank_name"] = bank_name
                 record.update(metrics)
 
             LOGGER.debug(
@@ -609,7 +623,11 @@ def extract_pdf_bank_data(pdf_path: Path) -> pd.DataFrame:
     if dataframe.empty:
         raise ValueError("No target Senegal banking records were extracted from the PDF.")
 
-    LOGGER.info("Banking PDF extraction completed with %s rows.", len(dataframe))
+    LOGGER.info(
+        "Banking PDF extraction completed with %s rows across %s banks.",
+        len(dataframe),
+        dataframe["sigle"].nunique(),
+    )
     return dataframe
 
 
@@ -660,7 +678,7 @@ def merge_bank_sources(
     LOGGER.info("Merging banking Excel and PDF datasets.")
     merged = excel_dataframe.merge(
         pdf_dataframe,
-        on=["sigle", "bank", "bank_name", "annee"],
+        on=["sigle", "annee"],
         how="outer",
         suffixes=("_excel", "_pdf"),
     )
@@ -673,6 +691,27 @@ def merge_bank_sources(
     merged["groupe_bancaire"] = merged["groupe_bancaire"].fillna(
         merged["sigle"].map(group_mapping)
     )
+    merged["bank"] = merged.get("bank_excel", pd.Series(index=merged.index, dtype="object"))
+    merged["bank"] = merged["bank"].combine_first(
+        merged.get("bank_pdf", pd.Series(index=merged.index, dtype="object"))
+    )
+    merged["bank"] = merged["bank"].fillna(merged["sigle"].map(slugify_identifier))
+    merged["bank_name"] = merged.get("bank_name_pdf", pd.Series(index=merged.index, dtype="object"))
+    merged["bank_name"] = merged["bank_name"].combine_first(
+        merged.get("bank_name_excel", pd.Series(index=merged.index, dtype="object"))
+    )
+    merged["bank_name"] = merged["bank_name"].fillna(merged["sigle"])
+
+    stable_name_mapping = (
+        merged[["sigle", "bank_name"]]
+        .dropna(subset=["bank_name"])
+        .assign(name_length=lambda frame: frame["bank_name"].astype(str).str.len())
+        .sort_values(["sigle", "name_length"], ascending=[True, False], kind="stable")
+        .drop_duplicates(subset=["sigle"])
+        .set_index("sigle")["bank_name"]
+        .to_dict()
+    )
+    merged["bank_name"] = merged["sigle"].map(stable_name_mapping).fillna(merged["bank_name"])
 
     for column in MERGE_VALUE_COLUMNS:
         excel_column = f"{column}_excel"
@@ -744,6 +783,16 @@ def preprocess_banking_data(data_directory: Path) -> pd.DataFrame:
         raise FileNotFoundError(f"Missing PDF source: {pdf_path}")
 
     excel_dataframe = load_bank_excel(excel_path)
-    pdf_dataframe = extract_pdf_bank_data(pdf_path)
+    pdf_dataframe = extract_pdf_bank_data(pdf_path, excel_dataframe)
     merged_dataframe = merge_bank_sources(excel_dataframe, pdf_dataframe)
+
+    validation_dataframe = merged_dataframe.assign(
+        company=merged_dataframe["bank_name"],
+        year=merged_dataframe["annee"],
+    )
+    print("Total rows:", len(validation_dataframe))
+    print("Unique banks:", validation_dataframe["company"].nunique())
+    print("Years:", [int(year) for year in sorted(validation_dataframe["year"].dropna().astype(int).unique())])
+    print(validation_dataframe.groupby("year")["company"].nunique())
+
     return merged_dataframe

@@ -13,16 +13,16 @@ WORKSPACE_ROOT = PROJECT_ROOT.parent
 if str(WORKSPACE_ROOT) not in sys.path:
     sys.path.insert(0, str(WORKSPACE_ROOT))
 
-from project_dataviz.database.mongo_connection import (  # noqa: E402
+from preprocessing.database.mongo_connection import (  # noqa: E402
     get_database,
     get_mongo_client,
     replace_collection_data,
 )
-from project_dataviz.scripts.preprocessing_bank import preprocess_banking_data  # noqa: E402
-from project_dataviz.scripts.preprocessing_insurance import (  # noqa: E402
+from preprocessing.scripts.preprocessing_bank import preprocess_banking_data  # noqa: E402
+from preprocessing.scripts.preprocessing_insurance import (  # noqa: E402
     preprocess_insurance_data,
 )
-from project_dataviz.scripts.preprocessing_solar import preprocess_solar_data  # noqa: E402
+from preprocessing.scripts.preprocessing_solar import preprocess_solar_data  # noqa: E402
 
 DEFAULT_MONGO_URI = (
     "mongodb+srv://younes_dataviz:Mongo2026@examdataviz.h1v5vwa.mongodb.net/"

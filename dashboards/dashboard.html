@@ -1,0 +1,1460 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Secteur Bancaire Sénégalais — Dashboard ISM</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --navy:#0f2b4c; --blue:#1a5276; --mid:#2980b9;
+  --gold:#d4a017; --bg:#f0f4f8; --card:#fff;
+  --text:#1c2833; --muted:#7f8c8d; --border:#dce3ec;
+  --green:#27ae60; --red:#e74c3c; --purple:#8e44ad;
+  --radius:10px; --shadow:0 2px 12px rgba(0,0,0,0.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+
+/* PRINT */
+@media print{
+  header,  .filters-bar, .tabs, .no-print{display:none!important}
+  .tab-panel{display:block!important;page-break-after:always}
+  .card{box-shadow:none;border:1px solid #ccc}
+  body{background:#fff}
+}
+
+/* HEADER */
+header{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 100%);
+  color:#fff;padding:0 32px;display:flex;align-items:center;justify-content:space-between;
+  height:64px;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,0.25)
+}
+.header-left{display:flex;align-items:center;gap:14px}
+.header-logo{
+  width:38px;height:38px;border-radius:8px;background:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:18px;color:var(--navy)
+}
+.header-title{font-size:18px;font-weight:700}
+.header-sub{font-size:11px;opacity:.65;margin-top:1px}
+.header-actions{display:flex;align-items:center;gap:10px}
+.header-badge{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  border-radius:20px;padding:4px 14px;font-size:12px
+}
+.btn-pdf{
+  background:var(--gold);color:var(--navy);border:none;border-radius:7px;
+  padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s
+}
+.btn-pdf:hover{background:#e8b520}
+.btn-home{text-decoration:none;display:inline-flex;align-items:center}
+.btn-csv{
+  background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);
+  border-radius:7px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s
+}
+.btn-csv:hover{background:rgba(255,255,255,.28)}
+
+/* FILTERS */
+.filters-bar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:12px 32px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  box-shadow:var(--shadow);position:sticky;top:64px;z-index:100
+}
+.filter-group{display:flex;align-items:center;gap:7px}
+.filter-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+.filter-group select{
+  border:1.5px solid var(--border);border-radius:7px;padding:6px 26px 6px 10px;
+  font-size:13px;color:var(--text);
+  background:#f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237f8c8d'/%3E%3C/svg%3E") no-repeat right 8px center;
+  -webkit-appearance:none;appearance:none;cursor:pointer;min-width:120px;transition:.2s
+}
+.filter-group select:focus{outline:none;border-color:var(--mid)}
+.filter-divider{width:1px;height:28px;background:var(--border)}
+.btn-reset{
+  margin-left:auto;background:var(--navy);color:#fff;border:none;border-radius:7px;
+  padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:.2s
+}
+.btn-reset:hover{background:var(--blue)}
+
+/* LAYOUT */
+.main{padding:22px 32px;max-width:1600px;margin:0 auto}
+
+/* TABS */
+.tabs{display:flex;gap:2px;margin-bottom:20px;border-bottom:2px solid var(--border);flex-wrap:wrap}
+.tab{
+  padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;
+  border-radius:8px 8px 0 0;color:var(--muted);transition:.15s;
+  border:2px solid transparent;border-bottom:none;margin-bottom:-2px;white-space:nowrap
+}
+.tab:hover{color:var(--mid);background:#eaf3fb}
+.tab.active{color:var(--navy);background:var(--card);border-color:var(--border);border-bottom-color:var(--card)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:14px;margin-bottom:22px}
+.kpi-card{
+  --accent:var(--mid);--glow:rgba(41,128,185,.14);
+  background:linear-gradient(180deg,#ffffff 0%,#f7fbff 100%);
+  border-radius:var(--radius);padding:18px 20px;
+  box-shadow:var(--shadow);border:1px solid var(--border);
+  display:flex;flex-direction:column;gap:8px;transition:.22s;
+  position:relative;overflow:hidden;isolation:isolate
+}
+.kpi-card::before{content:'';position:absolute;inset:0 0 auto 0;height:4px;background:var(--accent);pointer-events:none}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:0 18px 28px rgba(15,43,76,.14)}
+.kpi-card.gold{--accent:var(--gold);--glow:rgba(212,160,23,.18);background:linear-gradient(180deg,#fffdf7 0%,#fff8e8 100%)}
+.kpi-card.green{--accent:var(--green);--glow:rgba(39,174,96,.18);background:linear-gradient(180deg,#f8fdf9 0%,#eefaf3 100%)}
+.kpi-card.red{--accent:var(--red);--glow:rgba(231,76,60,.18);background:linear-gradient(180deg,#fff9f9 0%,#fff0f0 100%)}
+.kpi-card.navy{--accent:var(--navy);--glow:rgba(15,43,76,.18);background:linear-gradient(180deg,#f7faff 0%,#edf4fb 100%)}
+.kpi-card.purple{--accent:var(--purple);--glow:rgba(142,68,173,.18);background:linear-gradient(180deg,#fcf9ff 0%,#f5effb 100%)}
+.kpi-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.kpi-value{font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-trend{font-size:11px;font-weight:600}
+.kpi-trend.up{color:var(--green)}
+.kpi-trend.down{color:var(--red)}
+
+#kpi-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-bottom:26px}
+#kpi-grid .kpi-card{min-height:178px;padding:20px 22px 18px;border-color:rgba(15,43,76,.08);box-shadow:0 18px 36px rgba(15,43,76,.12)}
+#kpi-grid .kpi-card::after{content:'';position:absolute;top:-78px;right:-58px;width:190px;height:190px;border-radius:50%;background:radial-gradient(circle,var(--glow) 0%,rgba(255,255,255,0) 70%);pointer-events:none}
+#kpi-grid .kpi-card.featured{grid-column:span 2;--accent:var(--gold);--glow:rgba(212,160,23,.26);background:linear-gradient(135deg,#0f2b4c 0%,#16476d 62%,#1d638e 100%);border-color:rgba(255,255,255,.08);box-shadow:0 22px 42px rgba(15,43,76,.24)}
+#kpi-grid .kpi-card.featured::after{top:auto;bottom:-84px;right:-16px;width:250px;height:250px;background:radial-gradient(circle,rgba(212,160,23,.36) 0%,rgba(255,255,255,0) 72%)}
+#kpi-grid .kpi-card > *{position:relative;z-index:1}
+#kpi-grid .kpi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#kpi-grid .kpi-chip{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:rgba(15,43,76,.06);border:1px solid rgba(15,43,76,.08);color:var(--navy);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+#kpi-grid .kpi-value-row{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:10px}
+#kpi-grid .kpi-value{font-size:34px;letter-spacing:-.04em;line-height:.92}
+#kpi-grid .kpi-sub{margin-top:8px;font-size:12px;font-weight:600;color:#64748b}
+#kpi-grid .kpi-meta{margin-top:auto;padding-top:14px;border-top:1px solid rgba(15,43,76,.08);display:flex;align-items:center;justify-content:space-between;gap:12px}
+#kpi-grid .kpi-context{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+#kpi-grid .kpi-trend{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;padding:9px 12px;border-radius:16px;border:1px solid rgba(15,43,76,.08);background:rgba(15,43,76,.05);font-size:11px;font-weight:700;line-height:1.05;white-space:nowrap;min-width:104px}
+#kpi-grid .kpi-trend strong{font-size:12px;font-weight:800}
+#kpi-grid .kpi-trend small{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
+#kpi-grid .kpi-trend.up{color:var(--green);background:rgba(39,174,96,.12);border-color:rgba(39,174,96,.18)}
+#kpi-grid .kpi-trend.down{color:var(--red);background:rgba(231,76,60,.12);border-color:rgba(231,76,60,.18)}
+#kpi-grid .kpi-trend.neutral{color:var(--navy);background:rgba(15,43,76,.06);border-color:rgba(15,43,76,.1)}
+#kpi-grid .kpi-card.featured .kpi-label,
+#kpi-grid .kpi-card.featured .kpi-sub,
+#kpi-grid .kpi-card.featured .kpi-context{color:rgba(255,255,255,.78)}
+#kpi-grid .kpi-card.featured .kpi-value{color:#fff}
+#kpi-grid .kpi-card.featured .kpi-chip{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.16);color:#fff}
+#kpi-grid .kpi-card.featured .kpi-meta{border-top-color:rgba(255,255,255,.14)}
+#kpi-grid .kpi-card.featured .kpi-trend.neutral{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.12);color:#fff}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 22px;border:1px solid var(--border)}
+.card-title{
+  font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;
+  margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px
+}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--mid);flex-shrink:0}
+.dot.gold{background:var(--gold)}
+.dot.green{background:var(--green)}
+.dot.red{background:var(--red)}
+.dot.purple{background:var(--purple)}
+.dot.navy{background:var(--navy)}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+.g13{display:grid;grid-template-columns:1fr 3fr;gap:18px}
+.mb{margin-bottom:18px}
+
+/* CHART */
+.chart-wrap{position:relative}
+.chart-wrap canvas{max-height:300px}
+.chart-wrap.tall canvas{max-height:400px}
+.chart-wrap.short canvas{max-height:200px}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse;font-size:13px}
+.dt th{background:#f0f4f8;padding:9px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid var(--border);white-space:nowrap}
+.dt td{padding:9px 12px;border-bottom:1px solid #eef1f5;color:var(--text)}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:#f8fbff}
+.nr{text-align:right}
+.rank{font-weight:800;color:var(--muted);width:28px}
+.badge{display:inline-block;padding:2px 9px;border-radius:12px;font-size:10px;font-weight:600}
+.bl{background:#eaf7ea;color:#1e8449}
+.br{background:#ebf5fb;color:#1a5276}
+.bc{background:#fef9e7;color:#9a7d0a}
+.bi{background:#fdf2f8;color:#76448a}
+.bn{background:#f2f3f4;color:#7f8c8d}
+
+/* RATIO GAUGE */
+.ratio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.ratio-card{background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.ratio-name{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.ratio-value{font-size:28px;font-weight:800;color:var(--navy)}
+.ratio-bar-bg{background:#edf0f5;border-radius:4px;height:6px;margin-top:10px;overflow:hidden}
+.ratio-bar-fill{height:100%;border-radius:4px;transition:.5s}
+.ratio-desc{font-size:11px;color:var(--muted);margin-top:6px}
+
+/* BANK DETAIL */
+.bank-header{
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  border-radius:var(--radius);color:#fff;padding:22px 26px;margin-bottom:18px
+}
+.bank-name{font-size:22px;font-weight:800}
+.bank-meta{opacity:.7;font-size:12px;margin-top:3px}
+.bank-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.bkpi{background:rgba(255,255,255,.12);border-radius:8px;padding:10px 14px}
+.bkpi-l{font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.4px}
+.bkpi-v{font-size:18px;font-weight:800;margin-top:2px}
+
+/* MAP */
+#map{height:480px;border-radius:var(--radius);border:1px solid var(--border)}
+
+/* COMPARAISON */
+.compare-select{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.compare-select label{font-size:12px;font-weight:600;color:var(--muted);width:100%;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px}
+.chk-bank{display:flex;align-items:center;gap:6px;background:#f0f4f8;border-radius:6px;padding:5px 10px;cursor:pointer;transition:.15s;font-size:12px}
+.chk-bank:hover{background:#dce6f0}
+.chk-bank input{cursor:pointer;accent-color:var(--mid)}
+.chk-bank.checked{background:#dceeff;color:var(--blue)}
+
+/* SECTION HEADER */
+.section-hdr{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+
+/* BILAN STRUCTURE */
+.bilan-row{display:flex;height:40px;border-radius:6px;overflow:hidden;margin-bottom:8px}
+.bilan-seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;transition:.5s;min-width:2%}
+.bilan-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.bilan-leg-item{display:flex;align-items:center;gap:6px;font-size:11px}
+.bilan-leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px;color:var(--muted);font-size:13px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .g2,.g3,.g13{grid-template-columns:1fr}
+  .main{padding:14px}
+  .filters-bar{padding:10px 14px;top:64px}
+  header{padding:0 14px}
+  .bank-kpis{grid-template-columns:repeat(2,1fr)}
+  .ratio-grid{grid-template-columns:repeat(2,1fr)}
+  #kpi-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  #kpi-grid .kpi-card.featured{grid-column:span 1}
+  #kpi-grid .kpi-value-row{align-items:flex-start;flex-direction:column}
+  #kpi-grid .kpi-value{font-size:28px}
+}
+
+footer{text-align:center;padding:18px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);margin-top:28px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-logo">ISM</div>
+    <div>
+      <div class="header-title">Secteur Bancaire Sénégalais</div>
+      <div class="header-sub">Tableau de Bord Analytique · 2015–2022 · M2 Big Data</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="header-badge">28 banques · 218 obs.</div>
+    <a class="btn-pdf btn-home no-print" href="/">Retour accueil</a>
+    <button class="btn-pdf no-print" onclick="exportPDF()">⬇ PDF</button>
+    <button class="btn-csv no-print" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn-csv no-print" onclick="exportXLSX()">⬇ Excel</button>
+  </div>
+</header>
+
+<div class="filters-bar no-print">
+  <div class="filter-group">
+    <label>Année</label>
+    <select id="f-annee">
+      <option value="all" selected>Toutes</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+      <option value="2019">2019</option>
+      <option value="2018">2018</option>
+      <option value="2017">2017</option>
+      <option value="2016">2016</option>
+      <option value="2015">2015</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <label>Groupe</label>
+    <select id="f-groupe">
+      <option value="all">Tous</option>
+      <option value="Groupes Locaux">Locaux</option>
+      <option value="Groupes Regionaux">Régionaux</option>
+      <option value="Groupes Continentaux">Continentaux</option>
+      <option value="Groupes Internationaux">Internationaux</option>
+    </select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-group">
+    <label>Banque</label>
+    <select id="f-banque"><option value="all">Toutes</option></select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">Réinitialiser</button>
+</div>
+
+<div class="main">
+<div class="tabs no-print">
+  <div class="tab active"  onclick="switchTab('secteur',this)">Vue sectorielle</div>
+  <div class="tab" onclick="switchTab('bilan',this)">Bilan et structure</div>
+  <div class="tab" onclick="switchTab('ratios',this)">Ratios financiers</div>
+  <div class="tab" onclick="switchTab('classement',this)">Classement</div>
+  <div class="tab" onclick="switchTab('comparaison',this)">Comparaison</div>
+  <div class="tab" onclick="switchTab('banque',this)">Analyse banque</div>
+  <div class="tab" onclick="switchTab('carte',this)">Carte et réseau</div>
+  <div class="tab" onclick="switchTab('donnees',this)">Données</div>
+</div>
+
+<!-- TAB SECTEUR -->
+<div id="tab-secteur" class="tab-panel active">
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="g3 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Évolution du Total Actif Sectoriel (Mds FCFA)</div>
+      <div class="chart-wrap"><canvas id="ch-actif-evol"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot gold"></span>Répartition par Groupe (Total Actif)</div>
+      <div class="chart-wrap"><canvas id="ch-groupe-donut"></canvas></div>
+    </div>
+  </div>
+  <div class="g2 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot green"></span>Évolution PNB Sectoriel (Mds FCFA)</div>
+      <div class="chart-wrap"><canvas id="ch-pnb-evol"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot red"></span>Évolution Résultat Net (Mds FCFA)</div>
+      <div class="chart-wrap"><canvas id="ch-rn-evol"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="dot navy"></span>Ressources & Emplois (Mds FCFA)</div>
+      <div class="chart-wrap"><canvas id="ch-res-emp"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot purple"></span>Capitaux Propres du Secteur (Mds FCFA)</div>
+      <div class="chart-wrap"><canvas id="ch-cp-evol"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB BILAN -->
+<div id="tab-bilan" class="tab-panel">
+  <div class="kpi-grid" id="bilan-kpis"></div>
+  <div class="g2 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Structure du Bilan — Actif (année sélectionnée)</div>
+      <div id="bilan-actif-struct"></div>
+      <div class="chart-wrap mt" style="margin-top:16px"><canvas id="ch-bilan-actif"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot gold"></span>Structure du Bilan — Passif & Capitaux</div>
+      <div id="bilan-passif-struct"></div>
+      <div class="chart-wrap" style="margin-top:16px"><canvas id="ch-bilan-passif"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="dot green"></span>Évolution Créances Clientèle vs Dettes Clientèle</div>
+      <div class="chart-wrap"><canvas id="ch-creances-dettes"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot red"></span>Top Banques — Ratio Emplois/Ressources</div>
+      <div class="chart-wrap"><canvas id="ch-emp-res-ratio"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB RATIOS -->
+<div id="tab-ratios" class="tab-panel">
+  <div class="ratio-grid" id="ratio-cards"></div>
+  <div class="g2 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Évolution ROA & ROE du Secteur (%)</div>
+      <div class="chart-wrap"><canvas id="ch-roa-roe"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot gold"></span>Évolution NIM & Coeff. Exploitation (%)</div>
+      <div class="chart-wrap"><canvas id="ch-nim-cir"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="dot green"></span>ROA par Banque (année sélectionnée)</div>
+      <div class="chart-wrap tall"><canvas id="ch-roa-banks"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot red"></span>Coeff. Exploitation par Banque (%)</div>
+      <div class="chart-wrap tall"><canvas id="ch-cir-banks"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB CLASSEMENT -->
+<div id="tab-classement" class="tab-panel">
+  <div class="g2 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Top Banques — Total Actif (Mds FCFA)</div>
+      <div class="chart-wrap tall"><canvas id="ch-top-actif"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot green"></span>Top Banques — PNB (Mds FCFA)</div>
+      <div class="chart-wrap tall"><canvas id="ch-top-pnb"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot gold"></span>Tableau de Classement Complet</div>
+    <div style="overflow-x:auto">
+      <table class="dt">
+        <thead><tr><th>#</th><th>Banque</th><th>Groupe</th><th class="nr">Total Actif</th><th class="nr">PNB</th><th class="nr">Résultat Net</th><th class="nr">Capitaux Propres</th><th class="nr">ROA</th><th class="nr">ROE</th></tr></thead>
+        <tbody id="ranking-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB COMPARAISON -->
+<div id="tab-comparaison" class="tab-panel">
+  <div class="card mb">
+    <div class="card-title"><span class="dot"></span>Sélectionner les banques à comparer (max 6)</div>
+    <div id="compare-checkboxes" class="compare-select"></div>
+    <div style="margin-top:10px">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Indicateur</label>
+      <select id="compare-metric" style="margin-left:10px;border:1.5px solid var(--border);border-radius:7px;padding:5px 24px 5px 10px;font-size:13px;-webkit-appearance:none;appearance:none;background:#f8fafc url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22%3E%3Cpath d=%22M0 0l5 6 5-6z%22 fill=%22%237f8c8d%22/%3E%3C/svg%3E') no-repeat right 8px center">
+        <option value="TOTAL_ACTIF">Total Actif</option>
+        <option value="PRODUIT_NET_BANCAIRE">PNB</option>
+        <option value="RESULTAT_NET">Résultat Net</option>
+        <option value="CAPITAUX_PROPRES">Capitaux Propres</option>
+        <option value="RESSOURCES">Ressources</option>
+        <option value="EMPLOI">Emplois</option>
+        <option value="EFFECTIF">Effectif</option>
+        <option value="AGENCE">Agences</option>
+      </select>
+    </div>
+  </div>
+  <div class="g2 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Évolution comparée (Mds FCFA)</div>
+      <div class="chart-wrap tall"><canvas id="ch-compare-evol"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot gold"></span>Radar multi-indicateurs (dernière année disponible)</div>
+      <div class="chart-wrap tall"><canvas id="ch-compare-radar"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot green"></span>Comparaison directe (année sélectionnée)</div>
+    <div class="chart-wrap"><canvas id="ch-compare-bar"></canvas></div>
+  </div>
+</div>
+
+<!-- TAB BANQUE -->
+<div id="tab-banque" class="tab-panel">
+  <div id="bank-detail-content">
+    <div class="empty">Sélectionnez une banque dans le filtre ci-dessus pour voir son analyse détaillée.</div>
+  </div>
+</div>
+
+<!-- TAB CARTE -->
+<div id="tab-carte" class="tab-panel">
+  <div class="g13 mb">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Légende & Stats Réseau</div>
+      <div id="map-legend-content"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot green"></span>Présence Bancaire au Sénégal</div>
+      <div id="map"></div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><span class="dot gold"></span>Agences par Banque</div>
+      <div class="chart-wrap tall"><canvas id="ch-agences"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot purple"></span>Effectifs par Banque</div>
+      <div class="chart-wrap tall"><canvas id="ch-effectif"></canvas></div>
+    </div>
+  </div>
+  <div class="g2" style="margin-top:18px">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Évolution Agences (Secteur)</div>
+      <div class="chart-wrap"><canvas id="ch-agences-evol"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot purple"></span>Évolution Effectifs (Secteur)</div>
+      <div class="chart-wrap"><canvas id="ch-effectif-evol"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB DONNEES -->
+<div id="tab-donnees" class="tab-panel">
+  <div class="card">
+    <div class="card-title"><span class="dot"></span>Données complètes <span id="data-count" style="margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)"></span></div>
+    <div style="overflow-x:auto">
+      <table class="dt">
+        <thead><tr><th>Année</th><th>Sigle</th><th>Groupe</th><th class="nr">Total Actif</th><th class="nr">Cap. Propres</th><th class="nr">PNB</th><th class="nr">Résultat Net</th><th class="nr">Ressources</th><th class="nr">Emplois</th><th class="nr">Effectif</th><th class="nr">Agences</th><th class="nr">ROA %</th><th class="nr">ROE %</th></tr></thead>
+        <tbody id="data-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div><!-- /main -->
+
+<footer>
+  Source : BCEAO · Base <em>senegal_banques</em> · ISM Dakar — M2 Big Data &amp; Data Visualisation · 2015–2022
+</footer>
+
+<script>
+// ------------------------------------------------------------
+// DATA
+// ------------------------------------------------------------
+const RAW = [{"ANNEE":2015,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":297374,"CAPITAUX_PROPRES":10437,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":162739,"EMPLOI":166775,"EFFECTIF":206,"AGENCE":19,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":318603,"CAPITAUX_PROPRES":4513,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":153838,"EMPLOI":173612,"EFFECTIF":210,"AGENCE":19,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":341998,"CAPITAUX_PROPRES":10743,"PRODUIT_NET_BANCAIRE":13918,"RESULTAT_NET":1762,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":194008,"EMPLOI":189376,"EFFECTIF":213,"AGENCE":18,"INTERETS_PRODUITS":12522,"INTERETS_CHARGES":9823,"CHARGES_GENERALES":8737,"COUT_RISQUE":2369,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BAS","Nom":"BANQUE ATLANTIQUE-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":391136,"CAPITAUX_PROPRES":33206,"PRODUIT_NET_BANCAIRE":16398,"RESULTAT_NET":1131,"CREANCES_CLIENTELE":227111,"DETTES_CLIENTELE":201683,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":19504,"INTERETS_CHARGES":8356,"CHARGES_GENERALES":11961,"COUT_RISQUE":2510,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BAS","Nom":"BANQUE ATLANTIQUE-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":491984,"CAPITAUX_PROPRES":33631,"PRODUIT_NET_BANCAIRE":18092,"RESULTAT_NET":426,"CREANCES_CLIENTELE":306199,"DETTES_CLIENTELE":337354,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":21226,"INTERETS_CHARGES":8644,"CHARGES_GENERALES":12361,"COUT_RISQUE":4507,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":5869,"CAPITAUX_PROPRES":1891,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":3551,"EMPLOI":515,"EFFECTIF":25,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":179912,"CAPITAUX_PROPRES":100571,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":104255,"EMPLOI":707,"EFFECTIF":23,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BCIM","Nom":"BANQUE POUR LE COMMERCE ET L'INDUSTRIE DU MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":47025,"CAPITAUX_PROPRES":5920,"PRODUIT_NET_BANCAIRE":1918,"RESULTAT_NET":418,"CREANCES_CLIENTELE":20646,"DETTES_CLIENTELE":31675,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":2094,"INTERETS_CHARGES":671,"CHARGES_GENERALES":1182,"COUT_RISQUE":28,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":325682,"CAPITAUX_PROPRES":26261,"PRODUIT_NET_BANCAIRE":15626,"RESULTAT_NET":1535,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":159065,"EMPLOI":224452,"EFFECTIF":228,"AGENCE":10,"INTERETS_PRODUITS":18825,"INTERETS_CHARGES":8421,"CHARGES_GENERALES":10897,"COUT_RISQUE":2377,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BAS","Nom":"BANQUE ATLANTIQUE-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":408656,"CAPITAUX_PROPRES":33440,"PRODUIT_NET_BANCAIRE":18583,"RESULTAT_NET":4016,"CREANCES_CLIENTELE":240910,"DETTES_CLIENTELE":198205,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":19926,"INTERETS_CHARGES":8412,"CHARGES_GENERALES":11538,"COUT_RISQUE":2269,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":51483,"CAPITAUX_PROPRES":13085,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":24257,"EMPLOI":865,"EFFECTIF":27,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":179468,"CAPITAUX_PROPRES":20903,"PRODUIT_NET_BANCAIRE":9863,"RESULTAT_NET":2809,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":96326,"EMPLOI":111325,"EFFECTIF":66,"AGENCE":3,"INTERETS_PRODUITS":10327,"INTERETS_CHARGES":4019,"CHARGES_GENERALES":6673,"COUT_RISQUE":34,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":372383,"CAPITAUX_PROPRES":30994,"PRODUIT_NET_BANCAIRE":17404,"RESULTAT_NET":4733,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":189126,"EMPLOI":247812,"EFFECTIF":236,"AGENCE":21,"INTERETS_PRODUITS":19823,"INTERETS_CHARGES":8783,"CHARGES_GENERALES":11665,"COUT_RISQUE":199,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BAS","Nom":"BAS","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":408458,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":204057,"EMPLOI":276934,"EFFECTIF":236,"AGENCE":21,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":35673,"CAPITAUX_PROPRES":5629,"PRODUIT_NET_BANCAIRE":2055,"RESULTAT_NET":712,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":22239,"EMPLOI":14325,"EFFECTIF":25,"AGENCE":2,"INTERETS_PRODUITS":2215,"INTERETS_CHARGES":995,"CHARGES_GENERALES":1066,"COUT_RISQUE":-75,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":32353,"CAPITAUX_PROPRES":5731,"PRODUIT_NET_BANCAIRE":1752,"RESULTAT_NET":191,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":17443,"EMPLOI":13616,"EFFECTIF":26,"AGENCE":2,"INTERETS_PRODUITS":2046,"INTERETS_CHARGES":814,"CHARGES_GENERALES":1250,"COUT_RISQUE":-27,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":25730,"CAPITAUX_PROPRES":5502,"PRODUIT_NET_BANCAIRE":1632,"RESULTAT_NET":-38,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":18088,"EMPLOI":9911,"EFFECTIF":25,"AGENCE":2,"INTERETS_PRODUITS":2021,"INTERETS_CHARGES":764,"CHARGES_GENERALES":1186,"COUT_RISQUE":116,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BCIM","Nom":"BANQUE POUR LE COMMERCE ET L'INDUSTRIE DU MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":62219,"CAPITAUX_PROPRES":6433,"PRODUIT_NET_BANCAIRE":2115,"RESULTAT_NET":576,"CREANCES_CLIENTELE":25095,"DETTES_CLIENTELE":42329,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":3041,"INTERETS_CHARGES":1400,"CHARGES_GENERALES":1265,"COUT_RISQUE":29,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BCIM","Nom":"BANQUE POUR LE COMMERCE ET L'INDUSTRIE DU MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":68597,"CAPITAUX_PROPRES":5952,"PRODUIT_NET_BANCAIRE":2324,"RESULTAT_NET":95,"CREANCES_CLIENTELE":23799,"DETTES_CLIENTELE":42168,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":3743,"INTERETS_CHARGES":1868,"CHARGES_GENERALES":1299,"COUT_RISQUE":701,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BCIM","Nom":"BCIM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":47032,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":40710,"EMPLOI":20653,"EFFECTIF":27,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":106763,"CAPITAUX_PROPRES":17648,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":51785,"EMPLOI":4204,"EFFECTIF":43,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":164536,"CAPITAUX_PROPRES":18094,"PRODUIT_NET_BANCAIRE":8539,"RESULTAT_NET":1838,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":99922,"EMPLOI":82551,"EFFECTIF":52,"AGENCE":1,"INTERETS_PRODUITS":4937,"INTERETS_CHARGES":1875,"CHARGES_GENERALES":5064,"COUT_RISQUE":28,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BDK","Nom":"BANQUE DE DAKAR","Groupe_Bancaire":null,"TOTAL_ACTIF":355692,"CAPITAUX_PROPRES":32601,"PRODUIT_NET_BANCAIRE":16360,"RESULTAT_NET":5070,"CREANCES_CLIENTELE":209097,"DETTES_CLIENTELE":232315,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":20075,"INTERETS_CHARGES":9114,"CHARGES_GENERALES":9315,"COUT_RISQUE":846,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BDM","Nom":"BANQUE DE DEVELOPPEMENT MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":null,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":true},{"ANNEE":2019,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":170663,"CAPITAUX_PROPRES":23242,"PRODUIT_NET_BANCAIRE":10281,"RESULTAT_NET":2339,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":98657,"EMPLOI":99558,"EFFECTIF":115,"AGENCE":7,"INTERETS_PRODUITS":12840,"INTERETS_CHARGES":5447,"CHARGES_GENERALES":6809,"COUT_RISQUE":673,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BDK","Nom":"BANQUE DE DAKAR","Groupe_Bancaire":null,"TOTAL_ACTIF":207498,"CAPITAUX_PROPRES":23791,"PRODUIT_NET_BANCAIRE":9653,"RESULTAT_NET":549,"CREANCES_CLIENTELE":141686,"DETTES_CLIENTELE":143031,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":11041,"INTERETS_CHARGES":5400,"CHARGES_GENERALES":8237,"COUT_RISQUE":184,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BDK","Nom":"BANQUE DE DAKAR","Groupe_Bancaire":null,"TOTAL_ACTIF":301577,"CAPITAUX_PROPRES":27531,"PRODUIT_NET_BANCAIRE":13268,"RESULTAT_NET":3740,"CREANCES_CLIENTELE":171288,"DETTES_CLIENTELE":174606,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":15905,"INTERETS_CHARGES":7347,"CHARGES_GENERALES":8572,"COUT_RISQUE":-61,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BDK","Nom":"BDK","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":208146,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":111097,"EMPLOI":126336,"EFFECTIF":133,"AGENCE":7,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BDM","Nom":"BANQUE DE DEVELOPPEMENT MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":5488,"CAPITAUX_PROPRES":2255,"PRODUIT_NET_BANCAIRE":11,"RESULTAT_NET":-745,"CREANCES_CLIENTELE":390,"DETTES_CLIENTELE":1783,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":14,"INTERETS_CHARGES":8,"CHARGES_GENERALES":610,"COUT_RISQUE":0,"NEW_BANK":true},{"ANNEE":2022,"Sigle":"BDM","Nom":"BANQUE DE DEVELOPPEMENT MALI, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":7587,"CAPITAUX_PROPRES":1412,"PRODUIT_NET_BANCAIRE":94,"RESULTAT_NET":-843,"CREANCES_CLIENTELE":1865,"DETTES_CLIENTELE":2492,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":137,"INTERETS_CHARGES":60,"CHARGES_GENERALES":689,"COUT_RISQUE":0,"NEW_BANK":true},{"ANNEE":2017,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":57421,"CAPITAUX_PROPRES":8854,"PRODUIT_NET_BANCAIRE":1930,"RESULTAT_NET":-1911,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":19947,"EMPLOI":34579,"EFFECTIF":44,"AGENCE":1,"INTERETS_PRODUITS":2169,"INTERETS_CHARGES":993,"CHARGES_GENERALES":3325,"COUT_RISQUE":95,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":13894,"CAPITAUX_PROPRES":9098,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":457,"EMPLOI":3278,"EFFECTIF":37,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":24477,"CAPITAUX_PROPRES":9228,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":511,"EMPLOI":12115,"EFFECTIF":41,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":100164,"CAPITAUX_PROPRES":9662,"PRODUIT_NET_BANCAIRE":4596,"RESULTAT_NET":-2191,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":66261,"EMPLOI":67329,"EFFECTIF":53,"AGENCE":1,"INTERETS_PRODUITS":4279,"INTERETS_CHARGES":2571,"CHARGES_GENERALES":4231,"COUT_RISQUE":2200,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":87985,"CAPITAUX_PROPRES":3530,"PRODUIT_NET_BANCAIRE":2521,"RESULTAT_NET":-6133,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":59855,"EMPLOI":53944,"EFFECTIF":63,"AGENCE":2,"INTERETS_PRODUITS":4834,"INTERETS_CHARGES":3689,"CHARGES_GENERALES":4415,"COUT_RISQUE":3731,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BGFI","Nom":"BGFI BANK SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":139702,"CAPITAUX_PROPRES":14464,"PRODUIT_NET_BANCAIRE":4756,"RESULTAT_NET":934,"CREANCES_CLIENTELE":86520,"DETTES_CLIENTELE":90739,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":5949,"INTERETS_CHARGES":3742,"CHARGES_GENERALES":4019,"COUT_RISQUE":-787,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BGFI","Nom":"BGFI BANK SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":216330,"CAPITAUX_PROPRES":16013,"PRODUIT_NET_BANCAIRE":7445,"RESULTAT_NET":1549,"CREANCES_CLIENTELE":130508,"DETTES_CLIENTELE":102549,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":10904,"INTERETS_CHARGES":5466,"CHARGES_GENERALES":5022,"COUT_RISQUE":317,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BGFI","Nom":"BGFI BANK SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":220107,"CAPITAUX_PROPRES":18868,"PRODUIT_NET_BANCAIRE":8885,"RESULTAT_NET":2855,"CREANCES_CLIENTELE":139336,"DETTES_CLIENTELE":100390,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":12667,"INTERETS_CHARGES":6039,"CHARGES_GENERALES":5284,"COUT_RISQUE":202,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BHS","Nom":"BHS","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":278322,"CAPITAUX_PROPRES":30821,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":215423,"EMPLOI":218840,"EFFECTIF":21,"AGENCE":13,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BHS","Nom":"BHS","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":318410,"CAPITAUX_PROPRES":36614,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":219166,"EMPLOI":260162,"EFFECTIF":231,"AGENCE":15,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BGFI","Nom":"BGFI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":139696,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":57508,"EMPLOI":73108,"EFFECTIF":62,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BHS","Nom":"BHS","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":376718,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":256296,"EMPLOI":305960,"EFFECTIF":265,"AGENCE":19,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BHS","Nom":"BHS","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":427050,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":272043,"EMPLOI":338146,"EFFECTIF":289,"AGENCE":22,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BHS","Nom":"BANQUE DE L'HABITAT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":464663,"CAPITAUX_PROPRES":46739,"PRODUIT_NET_BANCAIRE":18260,"RESULTAT_NET":1316,"CREANCES_CLIENTELE":364902,"DETTES_CLIENTELE":315360,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":26211,"INTERETS_CHARGES":10543,"CHARGES_GENERALES":13699,"COUT_RISQUE":1269,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BHS","Nom":"BHS","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":471204,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":336205,"EMPLOI":357725,"EFFECTIF":282,"AGENCE":25,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BHS","Nom":"BANQUE DE L'HABITAT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":532282,"CAPITAUX_PROPRES":50088,"PRODUIT_NET_BANCAIRE":21619,"RESULTAT_NET":3349,"CREANCES_CLIENTELE":376905,"DETTES_CLIENTELE":352184,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":29593,"INTERETS_CHARGES":12575,"CHARGES_GENERALES":14241,"COUT_RISQUE":1392,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BHS","Nom":"BANQUE DE L'HABITAT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":563706,"CAPITAUX_PROPRES":52686,"PRODUIT_NET_BANCAIRE":27581,"RESULTAT_NET":4436,"CREANCES_CLIENTELE":419539,"DETTES_CLIENTELE":404621,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":34208,"INTERETS_CHARGES":11406,"CHARGES_GENERALES":15552,"COUT_RISQUE":5051,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":437494,"CAPITAUX_PROPRES":31523,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":349607,"EMPLOI":279625,"EFFECTIF":451,"AGENCE":32,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":442968,"CAPITAUX_PROPRES":40180,"PRODUIT_NET_BANCAIRE":33542,"RESULTAT_NET":10356,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":356535,"EMPLOI":314239,"EFFECTIF":455,"AGENCE":32,"INTERETS_PRODUITS":24178,"INTERETS_CHARGES":4588,"CHARGES_GENERALES":20069,"COUT_RISQUE":-2766,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":430615,"CAPITAUX_PROPRES":30941,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":343456,"EMPLOI":224354,"EFFECTIF":440,"AGENCE":32,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":463539,"CAPITAUX_PROPRES":47340,"PRODUIT_NET_BANCAIRE":34069,"RESULTAT_NET":9085,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":370987,"EMPLOI":326424,"EFFECTIF":469,"AGENCE":33,"INTERETS_PRODUITS":24036,"INTERETS_CHARGES":4772,"CHARGES_GENERALES":19987,"COUT_RISQUE":-507,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":499528,"CAPITAUX_PROPRES":55884,"PRODUIT_NET_BANCAIRE":36341,"RESULTAT_NET":8544,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":385663,"EMPLOI":346428,"EFFECTIF":483,"AGENCE":33,"INTERETS_PRODUITS":28170,"INTERETS_CHARGES":5365,"CHARGES_GENERALES":20104,"COUT_RISQUE":2247,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BICIS","Nom":"BANQUE INTERNATIONALE POUR LE COMMERCE ET L'INDUSTRIE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":483639,"CAPITAUX_PROPRES":60245,"PRODUIT_NET_BANCAIRE":31741,"RESULTAT_NET":4361,"CREANCES_CLIENTELE":313256,"DETTES_CLIENTELE":399947,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":25129,"INTERETS_CHARGES":5058,"CHARGES_GENERALES":20306,"COUT_RISQUE":4172,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BICIS","Nom":"BICIS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":483662,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":451441,"EMPLOI":299014,"EFFECTIF":483,"AGENCE":33,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BICIS","Nom":"BANQUE INTERNATIONALE POUR LE COMMERCE ET L'INDUSTRIE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":550574,"CAPITAUX_PROPRES":67569,"PRODUIT_NET_BANCAIRE":34774,"RESULTAT_NET":8434,"CREANCES_CLIENTELE":301622,"DETTES_CLIENTELE":430973,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":24926,"INTERETS_CHARGES":4073,"CHARGES_GENERALES":20649,"COUT_RISQUE":2906,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BICIS","Nom":"BANQUE INTERNATIONALE POUR LE COMMERCE ET L'INDUSTRIE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":661374,"CAPITAUX_PROPRES":64191,"PRODUIT_NET_BANCAIRE":34115,"RESULTAT_NET":4956,"CREANCES_CLIENTELE":324279,"DETTES_CLIENTELE":563492,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":25326,"INTERETS_CHARGES":4105,"CHARGES_GENERALES":21742,"COUT_RISQUE":4821,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BIMAO","Nom":"BANQUE DES INSTITUTIONS MUTUALISTES DE L'AFRIQUE DE L'OUEST","Groupe_Bancaire":null,"TOTAL_ACTIF":40429,"CAPITAUX_PROPRES":-14995,"PRODUIT_NET_BANCAIRE":550,"RESULTAT_NET":2475,"CREANCES_CLIENTELE":13350,"DETTES_CLIENTELE":5693,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1051,"INTERETS_CHARGES":784,"CHARGES_GENERALES":1696,"COUT_RISQUE":-3180,"NEW_BANK":true},{"ANNEE":2021,"Sigle":"BIMAO","Nom":"BANQUE DES INSTITUTIONS MUTUALISTES DE L'AFRIQUE DE L'OUEST","Groupe_Bancaire":null,"TOTAL_ACTIF":51122,"CAPITAUX_PROPRES":-1990,"PRODUIT_NET_BANCAIRE":430,"RESULTAT_NET":-1995,"CREANCES_CLIENTELE":14227,"DETTES_CLIENTELE":7929,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1098,"INTERETS_CHARGES":977,"CHARGES_GENERALES":1860,"COUT_RISQUE":191,"NEW_BANK":true},{"ANNEE":2022,"Sigle":"BIMAO","Nom":"BANQUE DES INSTITUTIONS MUTUALISTES DE L'AFRIQUE DE L'OUEST","Groupe_Bancaire":null,"TOTAL_ACTIF":64564,"CAPITAUX_PROPRES":-1038,"PRODUIT_NET_BANCAIRE":1987,"RESULTAT_NET":952,"CREANCES_CLIENTELE":26805,"DETTES_CLIENTELE":11532,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1787,"INTERETS_CHARGES":379,"CHARGES_GENERALES":1766,"COUT_RISQUE":218,"NEW_BANK":true},{"ANNEE":2015,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":214264,"CAPITAUX_PROPRES":27059,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":168435,"EMPLOI":155706,"EFFECTIF":132,"AGENCE":23,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":285684,"CAPITAUX_PROPRES":29609,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":230187,"EMPLOI":174368,"EFFECTIF":163,"AGENCE":26,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":315392,"CAPITAUX_PROPRES":34467,"PRODUIT_NET_BANCAIRE":16871,"RESULTAT_NET":6378,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":259260,"EMPLOI":232501,"EFFECTIF":182,"AGENCE":27,"INTERETS_PRODUITS":14721,"INTERETS_CHARGES":7601,"CHARGES_GENERALES":7615,"COUT_RISQUE":342,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":363243,"CAPITAUX_PROPRES":39542,"PRODUIT_NET_BANCAIRE":16478,"RESULTAT_NET":6574,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":294439,"EMPLOI":287646,"EFFECTIF":202,"AGENCE":28,"INTERETS_PRODUITS":16356,"INTERETS_CHARGES":8867,"CHARGES_GENERALES":8393,"COUT_RISQUE":-1257,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":369275,"CAPITAUX_PROPRES":43767,"PRODUIT_NET_BANCAIRE":18902,"RESULTAT_NET":6226,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":280335,"EMPLOI":292192,"EFFECTIF":206,"AGENCE":28,"INTERETS_PRODUITS":19609,"INTERETS_CHARGES":9953,"CHARGES_GENERALES":9979,"COUT_RISQUE":-166,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BIS","Nom":"BANQUE ISLAMIQUE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":577639,"CAPITAUX_PROPRES":63512,"PRODUIT_NET_BANCAIRE":27256,"RESULTAT_NET":9642,"CREANCES_CLIENTELE":458187,"DETTES_CLIENTELE":388378,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":28199,"INTERETS_CHARGES":11415,"CHARGES_GENERALES":11259,"COUT_RISQUE":1641,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BIS","Nom":"BANQUE ISLAMIQUE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":437666,"CAPITAUX_PROPRES":50369,"PRODUIT_NET_BANCAIRE":19738,"RESULTAT_NET":6602,"CREANCES_CLIENTELE":355763,"DETTES_CLIENTELE":317464,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":22937,"INTERETS_CHARGES":9965,"CHARGES_GENERALES":9239,"COUT_RISQUE":672,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BIS","Nom":"BIS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":437707,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":310699,"EMPLOI":330840,"EFFECTIF":225,"AGENCE":28,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BIS","Nom":"BANQUE ISLAMIQUE DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":732900,"CAPITAUX_PROPRES":68034,"PRODUIT_NET_BANCAIRE":34102,"RESULTAT_NET":8523,"CREANCES_CLIENTELE":563859,"DETTES_CLIENTELE":504514,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":35288,"INTERETS_CHARGES":15016,"CHARGES_GENERALES":14563,"COUT_RISQUE":5805,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":76436,"CAPITAUX_PROPRES":11398,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":30244,"EMPLOI":38226,"EFFECTIF":133,"AGENCE":7,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":87491,"CAPITAUX_PROPRES":11689,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":37131,"EMPLOI":39360,"EFFECTIF":135,"AGENCE":9,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":140318,"CAPITAUX_PROPRES":29786,"PRODUIT_NET_BANCAIRE":7752,"RESULTAT_NET":1594,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":71964,"EMPLOI":74853,"EFFECTIF":150,"AGENCE":11,"INTERETS_PRODUITS":5636,"INTERETS_CHARGES":1713,"CHARGES_GENERALES":4407,"COUT_RISQUE":893,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":175417,"CAPITAUX_PROPRES":30865,"PRODUIT_NET_BANCAIRE":9489,"RESULTAT_NET":2179,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":87291,"EMPLOI":104469,"EFFECTIF":163,"AGENCE":12,"INTERETS_PRODUITS":8601,"INTERETS_CHARGES":3121,"CHARGES_GENERALES":5200,"COUT_RISQUE":1070,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":216335,"CAPITAUX_PROPRES":33681,"PRODUIT_NET_BANCAIRE":10786,"RESULTAT_NET":2817,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":111204,"EMPLOI":91839,"EFFECTIF":182,"AGENCE":13,"INTERETS_PRODUITS":11290,"INTERETS_CHARGES":3947,"CHARGES_GENERALES":6400,"COUT_RISQUE":495,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BNDE","Nom":"BANQUE NATIONALE POUR LE DEVELOPPEMENT ECONOMIQUE","Groupe_Bancaire":null,"TOTAL_ACTIF":279012,"CAPITAUX_PROPRES":34845,"PRODUIT_NET_BANCAIRE":10951,"RESULTAT_NET":2573,"CREANCES_CLIENTELE":124295,"DETTES_CLIENTELE":126021,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":13876,"INTERETS_CHARGES":5478,"CHARGES_GENERALES":6417,"COUT_RISQUE":1042,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BNDE","Nom":"BNDE","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":279297,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":112612,"EMPLOI":123567,"EFFECTIF":197,"AGENCE":15,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BNDE","Nom":"BANQUE NATIONALE POUR LE DEVELOPPEMENT ECONOMIQUE","Groupe_Bancaire":null,"TOTAL_ACTIF":332107,"CAPITAUX_PROPRES":36763,"PRODUIT_NET_BANCAIRE":13817,"RESULTAT_NET":2793,"CREANCES_CLIENTELE":147251,"DETTES_CLIENTELE":170102,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":17827,"INTERETS_CHARGES":6370,"CHARGES_GENERALES":8044,"COUT_RISQUE":1946,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BNDE","Nom":"BANQUE NATIONALE POUR LE DEVELOPPEMENT ECONOMIQUE","Groupe_Bancaire":null,"TOTAL_ACTIF":398493,"CAPITAUX_PROPRES":37216,"PRODUIT_NET_BANCAIRE":17639,"RESULTAT_NET":453,"CREANCES_CLIENTELE":163570,"DETTES_CLIENTELE":181334,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":21404,"INTERETS_CHARGES":6851,"CHARGES_GENERALES":9818,"COUT_RISQUE":6106,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":361878,"CAPITAUX_PROPRES":26280,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":206125,"EMPLOI":193153,"EFFECTIF":234,"AGENCE":33,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":459146,"CAPITAUX_PROPRES":34093,"PRODUIT_NET_BANCAIRE":24819,"RESULTAT_NET":11388,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":274314,"EMPLOI":240239,"EFFECTIF":330,"AGENCE":55,"INTERETS_PRODUITS":30099,"INTERETS_CHARGES":13493,"CHARGES_GENERALES":12611,"COUT_RISQUE":-909,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":449937,"CAPITAUX_PROPRES":38335,"PRODUIT_NET_BANCAIRE":24948,"RESULTAT_NET":8509,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":290746,"EMPLOI":241382,"EFFECTIF":330,"AGENCE":59,"INTERETS_PRODUITS":27869,"INTERETS_CHARGES":13045,"CHARGES_GENERALES":14205,"COUT_RISQUE":-315,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":521726,"CAPITAUX_PROPRES":29331,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":318797,"EMPLOI":235388,"EFFECTIF":234,"AGENCE":42,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":534863,"CAPITAUX_PROPRES":43184,"PRODUIT_NET_BANCAIRE":30102,"RESULTAT_NET":9115,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":342478,"EMPLOI":267184,"EFFECTIF":347,"AGENCE":60,"INTERETS_PRODUITS":30522,"INTERETS_CHARGES":12863,"CHARGES_GENERALES":15832,"COUT_RISQUE":2244,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BOA","Nom":"BANK OF AFRICA-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":561588,"CAPITAUX_PROPRES":46551,"PRODUIT_NET_BANCAIRE":29996,"RESULTAT_NET":7667,"CREANCES_CLIENTELE":279572,"DETTES_CLIENTELE":373182,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":32319,"INTERETS_CHARGES":13352,"CHARGES_GENERALES":16612,"COUT_RISQUE":3496,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BOA","Nom":"BOA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":562897,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":344904,"EMPLOI":285619,"EFFECTIF":379,"AGENCE":59,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BOA","Nom":"BANK OF AFRICA-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":696306,"CAPITAUX_PROPRES":64615,"PRODUIT_NET_BANCAIRE":40503,"RESULTAT_NET":15581,"CREANCES_CLIENTELE":358939,"DETTES_CLIENTELE":546022,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":39947,"INTERETS_CHARGES":14542,"CHARGES_GENERALES":16260,"COUT_RISQUE":6081,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BOA","Nom":"BANK OF AFRICA-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":626289,"CAPITAUX_PROPRES":53327,"PRODUIT_NET_BANCAIRE":35726,"RESULTAT_NET":11070,"CREANCES_CLIENTELE":321621,"DETTES_CLIENTELE":445946,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":36655,"INTERETS_CHARGES":13521,"CHARGES_GENERALES":15829,"COUT_RISQUE":6617,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BRIDGE","Nom":"BRIDGE BANK GROUP-Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":null,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":true},{"ANNEE":2021,"Sigle":"BRIDGE","Nom":"BRIDGE BANK GROUP-Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":7930,"CAPITAUX_PROPRES":4687,"PRODUIT_NET_BANCAIRE":0,"RESULTAT_NET":-313,"CREANCES_CLIENTELE":669,"DETTES_CLIENTELE":698,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":0,"INTERETS_CHARGES":0,"CHARGES_GENERALES":289,"COUT_RISQUE":0,"NEW_BANK":true},{"ANNEE":2022,"Sigle":"BRIDGE","Nom":"BRIDGE BANK GROUP-Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":93372,"CAPITAUX_PROPRES":4832,"PRODUIT_NET_BANCAIRE":2712,"RESULTAT_NET":145,"CREANCES_CLIENTELE":57286,"DETTES_CLIENTELE":64541,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1680,"INTERETS_CHARGES":480,"CHARGES_GENERALES":2124,"COUT_RISQUE":64,"NEW_BANK":true},{"ANNEE":2015,"Sigle":"BRM","Nom":"BRM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":293900,"CAPITAUX_PROPRES":26425,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":98221,"EMPLOI":132957,"EFFECTIF":64,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"BRM","Nom":"BRM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":315452,"CAPITAUX_PROPRES":30956,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":91269,"EMPLOI":128797,"EFFECTIF":76,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BRM","Nom":"BRM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":408297,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":152373,"EMPLOI":234245,"EFFECTIF":144,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BRM","Nom":"BANQUE REGIONALE DE MARCHES","Groupe_Bancaire":null,"TOTAL_ACTIF":259874,"CAPITAUX_PROPRES":-71155,"PRODUIT_NET_BANCAIRE":-879,"RESULTAT_NET":-31651,"CREANCES_CLIENTELE":118257,"DETTES_CLIENTELE":141908,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":8496,"INTERETS_CHARGES":10376,"CHARGES_GENERALES":4996,"COUT_RISQUE":24631,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BRM","Nom":"BRM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":353164,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":127355,"EMPLOI":250305,"EFFECTIF":118,"AGENCE":4,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BRM","Nom":"BRM","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":292888,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":164111,"EMPLOI":148208,"EFFECTIF":125,"AGENCE":4,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BRM","Nom":"BANQUE REGIONALE DE MARCHES","Groupe_Bancaire":null,"TOTAL_ACTIF":194259,"CAPITAUX_PROPRES":-80102,"PRODUIT_NET_BANCAIRE":-1131,"RESULTAT_NET":-8950,"CREANCES_CLIENTELE":97783,"DETTES_CLIENTELE":134082,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":5975,"INTERETS_CHARGES":6623,"CHARGES_GENERALES":3864,"COUT_RISQUE":3780,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BRM","Nom":"BANQUE REGIONALE DE MARCHES","Groupe_Bancaire":null,"TOTAL_ACTIF":159170,"CAPITAUX_PROPRES":-86821,"PRODUIT_NET_BANCAIRE":-1993,"RESULTAT_NET":-6718,"CREANCES_CLIENTELE":84661,"DETTES_CLIENTELE":138439,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":4830,"INTERETS_CHARGES":5897,"CHARGES_GENERALES":2390,"COUT_RISQUE":1631,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"BSIC","Nom":"BSIC","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":124741,"CAPITAUX_PROPRES":11072,"PRODUIT_NET_BANCAIRE":5647,"RESULTAT_NET":-1298,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":61006,"EMPLOI":58944,"EFFECTIF":165,"AGENCE":14,"INTERETS_PRODUITS":7376,"INTERETS_CHARGES":3583,"CHARGES_GENERALES":4360,"COUT_RISQUE":2070,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"BSIC","Nom":"BSIC","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":120203,"CAPITAUX_PROPRES":4230,"PRODUIT_NET_BANCAIRE":4325,"RESULTAT_NET":-1648,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":62521,"EMPLOI":48202,"EFFECTIF":154,"AGENCE":14,"INTERETS_PRODUITS":6489,"INTERETS_CHARGES":3723,"CHARGES_GENERALES":4787,"COUT_RISQUE":706,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"BSIC","Nom":"BANQUE SAHELO-SAHARIENNE POUR L'INVESTISSEMENT ET LE COMMERCE","Groupe_Bancaire":null,"TOTAL_ACTIF":149512,"CAPITAUX_PROPRES":5994,"PRODUIT_NET_BANCAIRE":6450,"RESULTAT_NET":591,"CREANCES_CLIENTELE":72020,"DETTES_CLIENTELE":81891,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":6932,"INTERETS_CHARGES":2920,"CHARGES_GENERALES":5280,"COUT_RISQUE":474,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"BSIC","Nom":"BSIC","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":122869,"CAPITAUX_PROPRES":5878,"PRODUIT_NET_BANCAIRE":4695,"RESULTAT_NET":-5193,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":52792,"EMPLOI":46202,"EFFECTIF":156,"AGENCE":14,"INTERETS_PRODUITS":6417,"INTERETS_CHARGES":3981,"CHARGES_GENERALES":4693,"COUT_RISQUE":4534,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BSIC","Nom":"BANQUE SAHELO-SAHARIENNE POUR L'INVESTISSEMENT ET LE COMMERCE","Groupe_Bancaire":null,"TOTAL_ACTIF":129617,"CAPITAUX_PROPRES":5402,"PRODUIT_NET_BANCAIRE":5159,"RESULTAT_NET":-2328,"CREANCES_CLIENTELE":50400,"DETTES_CLIENTELE":67356,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":6711,"INTERETS_CHARGES":3447,"CHARGES_GENERALES":4714,"COUT_RISQUE":2205,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"BSIC","Nom":"BANQUE SAHELO-SAHARIENNE POUR L'INVESTISSEMENT ET LE COMMERCE","Groupe_Bancaire":null,"TOTAL_ACTIF":208190,"CAPITAUX_PROPRES":11523,"PRODUIT_NET_BANCAIRE":8920,"RESULTAT_NET":2029,"CREANCES_CLIENTELE":118893,"DETTES_CLIENTELE":137657,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":9946,"INTERETS_CHARGES":3636,"CHARGES_GENERALES":6781,"COUT_RISQUE":162,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"BSIC","Nom":"BSIC","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":131535,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":81827,"EMPLOI":48037,"EFFECTIF":154,"AGENCE":14,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":918827,"CAPITAUX_PROPRES":85750,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":647990,"EMPLOI":559794,"EFFECTIF":1015,"AGENCE":90,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":811726,"CAPITAUX_PROPRES":81176,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":626330,"EMPLOI":494074,"EFFECTIF":1028,"AGENCE":87,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":989383,"CAPITAUX_PROPRES":88417,"PRODUIT_NET_BANCAIRE":72150,"RESULTAT_NET":17074,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":749689,"EMPLOI":670185,"EFFECTIF":1013,"AGENCE":86,"INTERETS_PRODUITS":72667,"INTERETS_CHARGES":23192,"CHARGES_GENERALES":36570,"COUT_RISQUE":9856,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":961930,"CAPITAUX_PROPRES":101402,"PRODUIT_NET_BANCAIRE":70007,"RESULTAT_NET":23385,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":779970,"EMPLOI":658655,"EFFECTIF":1013,"AGENCE":87,"INTERETS_PRODUITS":58634,"INTERETS_CHARGES":10141,"CHARGES_GENERALES":34777,"COUT_RISQUE":1291,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":1033330,"CAPITAUX_PROPRES":109639,"PRODUIT_NET_BANCAIRE":77319,"RESULTAT_NET":26102,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":866397,"EMPLOI":700259,"EFFECTIF":1037,"AGENCE":88,"INTERETS_PRODUITS":62334,"INTERETS_CHARGES":10813,"CHARGES_GENERALES":36936,"COUT_RISQUE":2803,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CBAO","Nom":"CBAO, GROUPE ATTIJARIWAFA BANK","Groupe_Bancaire":null,"TOTAL_ACTIF":1061864,"CAPITAUX_PROPRES":112829,"PRODUIT_NET_BANCAIRE":78046,"RESULTAT_NET":21155,"CREANCES_CLIENTELE":707895,"DETTES_CLIENTELE":885447,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":63870,"INTERETS_CHARGES":11142,"CHARGES_GENERALES":38428,"COUT_RISQUE":9090,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CBAO","Nom":"CBAO","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":1151047,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":859399,"EMPLOI":668334,"EFFECTIF":1044,"AGENCE":90,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CBAO","Nom":"CBAO, GROUPE ATTIJARIWAFA BANK","Groupe_Bancaire":null,"TOTAL_ACTIF":1172780,"CAPITAUX_PROPRES":124305,"PRODUIT_NET_BANCAIRE":83344,"RESULTAT_NET":29415,"CREANCES_CLIENTELE":754858,"DETTES_CLIENTELE":969295,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":65478,"INTERETS_CHARGES":10438,"CHARGES_GENERALES":38617,"COUT_RISQUE":4287,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CBAO","Nom":"CBAO, GROUPE ATTIJARIWAFA BANK","Groupe_Bancaire":null,"TOTAL_ACTIF":1338258,"CAPITAUX_PROPRES":138544,"PRODUIT_NET_BANCAIRE":93894,"RESULTAT_NET":34375,"CREANCES_CLIENTELE":871980,"DETTES_CLIENTELE":1102891,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":70592,"INTERETS_CHARGES":9404,"CHARGES_GENERALES":41244,"COUT_RISQUE":3451,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"CBI","Nom":"CBI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":40255,"CAPITAUX_PROPRES":3576,"PRODUIT_NET_BANCAIRE":1863,"RESULTAT_NET":76,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":23663,"EMPLOI":21626,"EFFECTIF":31,"AGENCE":2,"INTERETS_PRODUITS":1476,"INTERETS_CHARGES":623,"CHARGES_GENERALES":1571,"COUT_RISQUE":21,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"CBI","Nom":"CBI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":81875,"CAPITAUX_PROPRES":10500,"PRODUIT_NET_BANCAIRE":0,"RESULTAT_NET":0,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":30773,"EMPLOI":46617,"EFFECTIF":36,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"CBI","Nom":"CBI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":185634,"CAPITAUX_PROPRES":23078,"PRODUIT_NET_BANCAIRE":8449,"RESULTAT_NET":3078,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":128012,"EMPLOI":130097,"EFFECTIF":53,"AGENCE":5,"INTERETS_PRODUITS":6206,"INTERETS_CHARGES":1625,"CHARGES_GENERALES":3409,"COUT_RISQUE":476,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CBI","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":324010,"CAPITAUX_PROPRES":27321,"PRODUIT_NET_BANCAIRE":15061,"RESULTAT_NET":5875,"CREANCES_CLIENTELE":164753,"DETTES_CLIENTELE":219333,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":16291,"INTERETS_CHARGES":5463,"CHARGES_GENERALES":6775,"COUT_RISQUE":1069,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CBI","Nom":"CBI","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":324023,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":152263,"EMPLOI":153437,"EFFECTIF":89,"AGENCE":12,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CBI","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":410737,"CAPITAUX_PROPRES":34031,"PRODUIT_NET_BANCAIRE":20308,"RESULTAT_NET":8824,"CREANCES_CLIENTELE":224488,"DETTES_CLIENTELE":228261,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":22751,"INTERETS_CHARGES":7464,"CHARGES_GENERALES":8546,"COUT_RISQUE":1423,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CBI","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":599112,"CAPITAUX_PROPRES":34110,"PRODUIT_NET_BANCAIRE":25166,"RESULTAT_NET":3609,"CREANCES_CLIENTELE":318979,"DETTES_CLIENTELE":339302,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":32644,"INTERETS_CHARGES":12644,"CHARGES_GENERALES":12007,"COUT_RISQUE":8602,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":171978,"CAPITAUX_PROPRES":15788,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":124374,"EMPLOI":90286,"EFFECTIF":126,"AGENCE":8,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":192935,"CAPITAUX_PROPRES":17863,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":142201,"EMPLOI":95837,"EFFECTIF":125,"AGENCE":8,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":167833,"CAPITAUX_PROPRES":21803,"PRODUIT_NET_BANCAIRE":11441,"RESULTAT_NET":3057,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":120467,"EMPLOI":90451,"EFFECTIF":131,"AGENCE":8,"INTERETS_PRODUITS":9356,"INTERETS_CHARGES":1629,"CHARGES_GENERALES":5748,"COUT_RISQUE":1162,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":204668,"CAPITAUX_PROPRES":23614,"PRODUIT_NET_BANCAIRE":11021,"RESULTAT_NET":3512,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":147050,"EMPLOI":114166,"EFFECTIF":131,"AGENCE":8,"INTERETS_PRODUITS":9713,"INTERETS_CHARGES":2018,"CHARGES_GENERALES":5428,"COUT_RISQUE":631,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CDS","Nom":"CREDIT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":234308,"CAPITAUX_PROPRES":29611,"PRODUIT_NET_BANCAIRE":13370,"RESULTAT_NET":5142,"CREANCES_CLIENTELE":133101,"DETTES_CLIENTELE":171172,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":12680,"INTERETS_CHARGES":2554,"CHARGES_GENERALES":6170,"COUT_RISQUE":81,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":230294,"CAPITAUX_PROPRES":27073,"PRODUIT_NET_BANCAIRE":12857,"RESULTAT_NET":5208,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":164921,"EMPLOI":127188,"EFFECTIF":143,"AGENCE":8,"INTERETS_PRODUITS":11873,"INTERETS_CHARGES":2480,"CHARGES_GENERALES":6032,"COUT_RISQUE":-396,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CDS","Nom":"CDS","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":234308,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":165867,"EMPLOI":120974,"EFFECTIF":150,"AGENCE":8,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CDS","Nom":"CREDIT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":242391,"CAPITAUX_PROPRES":32347,"PRODUIT_NET_BANCAIRE":14673,"RESULTAT_NET":5821,"CREANCES_CLIENTELE":155004,"DETTES_CLIENTELE":146641,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":14200,"INTERETS_CHARGES":2911,"CHARGES_GENERALES":6462,"COUT_RISQUE":28,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CDS","Nom":"CREDIT DU SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":285111,"CAPITAUX_PROPRES":35039,"PRODUIT_NET_BANCAIRE":15869,"RESULTAT_NET":6766,"CREANCES_CLIENTELE":178816,"DETTES_CLIENTELE":182680,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":16475,"INTERETS_CHARGES":3609,"CHARGES_GENERALES":6675,"COUT_RISQUE":-207,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":55995,"CAPITAUX_PROPRES":9496,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":40209,"EMPLOI":23810,"EFFECTIF":51,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":62821,"CAPITAUX_PROPRES":12357,"PRODUIT_NET_BANCAIRE":2883,"RESULTAT_NET":846,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":46289,"EMPLOI":26375,"EFFECTIF":39,"AGENCE":2,"INTERETS_PRODUITS":3685,"INTERETS_CHARGES":1683,"CHARGES_GENERALES":1678,"COUT_RISQUE":86,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":51395,"CAPITAUX_PROPRES":8894,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":33630,"EMPLOI":2091,"EFFECTIF":29,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":65335,"CAPITAUX_PROPRES":12474,"PRODUIT_NET_BANCAIRE":2941,"RESULTAT_NET":578,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":147050,"EMPLOI":28131,"EFFECTIF":58,"AGENCE":2,"INTERETS_PRODUITS":4036,"INTERETS_CHARGES":1848,"CHARGES_GENERALES":1990,"COUT_RISQUE":90,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":57663,"CAPITAUX_PROPRES":13166,"PRODUIT_NET_BANCAIRE":2813,"RESULTAT_NET":885,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":35645,"EMPLOI":24122,"EFFECTIF":52,"AGENCE":2,"INTERETS_PRODUITS":3759,"INTERETS_CHARGES":1702,"CHARGES_GENERALES":1609,"COUT_RISQUE":82,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CISA","Nom":"CISA","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":54371,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":46724,"EMPLOI":24343,"EFFECTIF":51,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":87696,"CAPITAUX_PROPRES":19847,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":57126,"EMPLOI":21784,"EFFECTIF":32,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":104708,"CAPITAUX_PROPRES":20363,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":69104,"EMPLOI":31386,"EFFECTIF":28,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":101380,"CAPITAUX_PROPRES":21921,"PRODUIT_NET_BANCAIRE":7010,"RESULTAT_NET":3177,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":66537,"EMPLOI":48374,"EFFECTIF":29,"AGENCE":1,"INTERETS_PRODUITS":2159,"INTERETS_CHARGES":55,"CHARGES_GENERALES":3333,"COUT_RISQUE":-662,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":107725,"CAPITAUX_PROPRES":18151,"PRODUIT_NET_BANCAIRE":7661,"RESULTAT_NET":1431,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":75695,"EMPLOI":57060,"EFFECTIF":29,"AGENCE":1,"INTERETS_PRODUITS":3416,"INTERETS_CHARGES":130,"CHARGES_GENERALES":3865,"COUT_RISQUE":1670,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":114862,"CAPITAUX_PROPRES":21350,"PRODUIT_NET_BANCAIRE":9828,"RESULTAT_NET":4415,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":83403,"EMPLOI":55997,"EFFECTIF":29,"AGENCE":1,"INTERETS_PRODUITS":3607,"INTERETS_CHARGES":210,"CHARGES_GENERALES":4974,"COUT_RISQUE":-1587,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CITIBANK","Nom":"CITIBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":135078,"CAPITAUX_PROPRES":24123,"PRODUIT_NET_BANCAIRE":8345,"RESULTAT_NET":2773,"CREANCES_CLIENTELE":47752,"DETTES_CLIENTELE":100055,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":4286,"INTERETS_CHARGES":372,"CHARGES_GENERALES":4575,"COUT_RISQUE":38,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CITIBANK","Nom":"CITIBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":135275,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":157563,"EMPLOI":43616,"EFFECTIF":28,"AGENCE":1,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CITIBANK","Nom":"CITIBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":226778,"CAPITAUX_PROPRES":28466,"PRODUIT_NET_BANCAIRE":9725,"RESULTAT_NET":4343,"CREANCES_CLIENTELE":46613,"DETTES_CLIENTELE":187753,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":4434,"INTERETS_CHARGES":340,"CHARGES_GENERALES":4091,"COUT_RISQUE":0,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CITIBANK","Nom":"CITIBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":277384,"CAPITAUX_PROPRES":31126,"PRODUIT_NET_BANCAIRE":14508,"RESULTAT_NET":6957,"CREANCES_CLIENTELE":106858,"DETTES_CLIENTELE":237285,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":5293,"INTERETS_CHARGES":27,"CHARGES_GENERALES":4849,"COUT_RISQUE":0,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CORIS","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":410737,"CAPITAUX_PROPRES":34031,"PRODUIT_NET_BANCAIRE":20308,"RESULTAT_NET":8824,"CREANCES_CLIENTELE":224488,"DETTES_CLIENTELE":228261,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":22751,"INTERETS_CHARGES":7464,"CHARGES_GENERALES":8546,"COUT_RISQUE":1423,"NEW_BANK":true},{"ANNEE":2020,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":721563,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":461252,"EMPLOI":299014,"EFFECTIF":399,"AGENCE":28,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":701430,"CAPITAUX_PROPRES":41939,"PRODUIT_NET_BANCAIRE":42448,"RESULTAT_NET":13118,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":473130,"EMPLOI":316950,"EFFECTIF":423,"AGENCE":34,"INTERETS_PRODUITS":21763,"INTERETS_CHARGES":11140,"CHARGES_GENERALES":24600,"COUT_RISQUE":2284,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CORIS","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":324010,"CAPITAUX_PROPRES":27321,"PRODUIT_NET_BANCAIRE":15061,"RESULTAT_NET":5875,"CREANCES_CLIENTELE":164753,"DETTES_CLIENTELE":219333,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":16291,"INTERETS_CHARGES":5463,"CHARGES_GENERALES":6775,"COUT_RISQUE":1069,"NEW_BANK":true},{"ANNEE":2015,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":648371,"CAPITAUX_PROPRES":29819,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":497791,"EMPLOI":316186,"EFFECTIF":342,"AGENCE":39,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"ECOBANK","Nom":"ECOBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":718412,"CAPITAUX_PROPRES":44672,"PRODUIT_NET_BANCAIRE":38471,"RESULTAT_NET":8112,"CREANCES_CLIENTELE":350532,"DETTES_CLIENTELE":476700,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":30637,"INTERETS_CHARGES":18791,"CHARGES_GENERALES":25867,"COUT_RISQUE":2297,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CORIS","Nom":"CORIS BANK INTERNATIONAL-SENEGAL (*)","Groupe_Bancaire":null,"TOTAL_ACTIF":599112,"CAPITAUX_PROPRES":34110,"PRODUIT_NET_BANCAIRE":25166,"RESULTAT_NET":3609,"CREANCES_CLIENTELE":318979,"DETTES_CLIENTELE":339302,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":32644,"INTERETS_CHARGES":12644,"CHARGES_GENERALES":12007,"COUT_RISQUE":8602,"NEW_BANK":true},{"ANNEE":2016,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":741250,"CAPITAUX_PROPRES":33358,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":490739,"EMPLOI":284138,"EFFECTIF":356,"AGENCE":38,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":715278,"CAPITAUX_PROPRES":36623,"PRODUIT_NET_BANCAIRE":41419,"RESULTAT_NET":8906,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":513305,"EMPLOI":327756,"EFFECTIF":355,"AGENCE":34,"INTERETS_PRODUITS":21762,"INTERETS_CHARGES":12504,"CHARGES_GENERALES":24087,"COUT_RISQUE":6155,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"ECOBANK","Nom":"ECOBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":654760,"CAPITAUX_PROPRES":43391,"PRODUIT_NET_BANCAIRE":39482,"RESULTAT_NET":8036,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":526114,"EMPLOI":319764,"EFFECTIF":411,"AGENCE":34,"INTERETS_PRODUITS":24872,"INTERETS_CHARGES":15526,"CHARGES_GENERALES":27884,"COUT_RISQUE":1299,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":32204,"CAPITAUX_PROPRES":10210,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":14727,"EMPLOI":7529,"EFFECTIF":68,"AGENCE":3,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"ECOBANK","Nom":"ECOBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":844547,"CAPITAUX_PROPRES":52922,"PRODUIT_NET_BANCAIRE":42634,"RESULTAT_NET":12307,"CREANCES_CLIENTELE":352174,"DETTES_CLIENTELE":543241,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":43503,"INTERETS_CHARGES":17219,"CHARGES_GENERALES":24057,"COUT_RISQUE":4859,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"ECOBANK","Nom":"ECOBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":963980,"CAPITAUX_PROPRES":64652,"PRODUIT_NET_BANCAIRE":53121,"RESULTAT_NET":18578,"CREANCES_CLIENTELE":387406,"DETTES_CLIENTELE":617763,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":40230,"INTERETS_CHARGES":23954,"CHARGES_GENERALES":26697,"COUT_RISQUE":6850,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":30849,"CAPITAUX_PROPRES":10625,"PRODUIT_NET_BANCAIRE":3241,"RESULTAT_NET":243,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":14582,"EMPLOI":5165,"EFFECTIF":89,"AGENCE":3,"INTERETS_PRODUITS":830,"INTERETS_CHARGES":531,"CHARGES_GENERALES":2609,"COUT_RISQUE":6,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":35518,"CAPITAUX_PROPRES":10714,"PRODUIT_NET_BANCAIRE":2475,"RESULTAT_NET":89,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":18146,"EMPLOI":6701,"EFFECTIF":94,"AGENCE":3,"INTERETS_PRODUITS":1905,"INTERETS_CHARGES":631,"CHARGES_GENERALES":2347,"COUT_RISQUE":-234,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":37089,"CAPITAUX_PROPRES":10415,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":16713,"EMPLOI":4769,"EFFECTIF":65,"AGENCE":3,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":29930,"CAPITAUX_PROPRES":10909,"PRODUIT_NET_BANCAIRE":3044,"RESULTAT_NET":193,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":17386,"EMPLOI":6338,"EFFECTIF":107,"AGENCE":3,"INTERETS_PRODUITS":2167,"INTERETS_CHARGES":607,"CHARGES_GENERALES":2715,"COUT_RISQUE":-76,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"FBNBANK","Nom":"FBNBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":72887,"CAPITAUX_PROPRES":10923,"PRODUIT_NET_BANCAIRE":3242,"RESULTAT_NET":13,"CREANCES_CLIENTELE":41414,"DETTES_CLIENTELE":46775,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":2013,"INTERETS_CHARGES":642,"CHARGES_GENERALES":3038,"COUT_RISQUE":-35,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"FBNBANK","Nom":"FBNBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":121265,"CAPITAUX_PROPRES":12064,"PRODUIT_NET_BANCAIRE":4853,"RESULTAT_NET":1141,"CREANCES_CLIENTELE":75504,"DETTES_CLIENTELE":106562,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":4747,"INTERETS_CHARGES":1518,"CHARGES_GENERALES":3487,"COUT_RISQUE":-10,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"FBNBANK","Nom":"FBNBANK-SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":307974,"CAPITAUX_PROPRES":14193,"PRODUIT_NET_BANCAIRE":7886,"RESULTAT_NET":2129,"CREANCES_CLIENTELE":116355,"DETTES_CLIENTELE":251111,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":9300,"INTERETS_CHARGES":3382,"CHARGES_GENERALES":5022,"COUT_RISQUE":412,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"FBNBANK","Nom":"FBNBANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":72848,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":36455,"EMPLOI":26025,"EFFECTIF":98,"AGENCE":6,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":242576,"CAPITAUX_PROPRES":18227,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":165785,"EMPLOI":207509,"EFFECTIF":303,"AGENCE":33,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":249489,"CAPITAUX_PROPRES":19534,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":172588,"EMPLOI":210790,"EFFECTIF":322,"AGENCE":32,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":254211,"CAPITAUX_PROPRES":21717,"PRODUIT_NET_BANCAIRE":17197,"RESULTAT_NET":2183,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":175104,"EMPLOI":228003,"EFFECTIF":328,"AGENCE":34,"INTERETS_PRODUITS":12366,"INTERETS_CHARGES":4288,"CHARGES_GENERALES":10364,"COUT_RISQUE":3618,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":296545,"CAPITAUX_PROPRES":30284,"PRODUIT_NET_BANCAIRE":18579,"RESULTAT_NET":2239,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":206661,"EMPLOI":270577,"EFFECTIF":351,"AGENCE":37,"INTERETS_PRODUITS":14026,"INTERETS_CHARGES":4720,"CHARGES_GENERALES":11077,"COUT_RISQUE":3048,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":328595,"CAPITAUX_PROPRES":30311,"PRODUIT_NET_BANCAIRE":19243,"RESULTAT_NET":527,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":232700,"EMPLOI":270554,"EFFECTIF":350,"AGENCE":38,"INTERETS_PRODUITS":15771,"INTERETS_CHARGES":5166,"CHARGES_GENERALES":11256,"COUT_RISQUE":5949,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"LBA","Nom":"LA BANQUE AGRICOLE (ex CNCAS)","Groupe_Bancaire":null,"TOTAL_ACTIF":335233,"CAPITAUX_PROPRES":23553,"PRODUIT_NET_BANCAIRE":17888,"RESULTAT_NET":-6758,"CREANCES_CLIENTELE":264926,"DETTES_CLIENTELE":248475,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":18276,"INTERETS_CHARGES":5374,"CHARGES_GENERALES":10467,"COUT_RISQUE":12898,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"LBA","Nom":"LBA","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":343035,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":244963,"EMPLOI":272639,"EFFECTIF":353,"AGENCE":40,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"LBA","Nom":"LA BANQUE AGRICOLE (ex CNCAS)","Groupe_Bancaire":null,"TOTAL_ACTIF":395988,"CAPITAUX_PROPRES":23355,"PRODUIT_NET_BANCAIRE":20186,"RESULTAT_NET":-443,"CREANCES_CLIENTELE":288146,"DETTES_CLIENTELE":296149,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":18354,"INTERETS_CHARGES":5670,"CHARGES_GENERALES":13155,"COUT_RISQUE":5653,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"LBA","Nom":"LA BANQUE AGRICOLE (ex CNCAS)","Groupe_Bancaire":null,"TOTAL_ACTIF":352816,"CAPITAUX_PROPRES":23799,"PRODUIT_NET_BANCAIRE":19785,"RESULTAT_NET":-4754,"CREANCES_CLIENTELE":276424,"DETTES_CLIENTELE":266113,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":20133,"INTERETS_CHARGES":5318,"CHARGES_GENERALES":11444,"COUT_RISQUE":11694,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"LBO","Nom":"LBO","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":11213,"CAPITAUX_PROPRES":10049,"PRODUIT_NET_BANCAIRE":254,"RESULTAT_NET":-532,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":254,"INTERETS_CHARGES":0,"CHARGES_GENERALES":105,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"LBO","Nom":"LBO","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":15273,"CAPITAUX_PROPRES":12324,"PRODUIT_NET_BANCAIRE":652,"RESULTAT_NET":-1225,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":1879,"EMPLOI":84,"EFFECTIF":36,"AGENCE":1,"INTERETS_PRODUITS":647,"INTERETS_CHARGES":6,"CHARGES_GENERALES":1730,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"LBO","Nom":"LBO","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":22941,"CAPITAUX_PROPRES":11129,"PRODUIT_NET_BANCAIRE":941,"RESULTAT_NET":-1695,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":11222,"EMPLOI":10681,"EFFECTIF":37,"AGENCE":1,"INTERETS_PRODUITS":833,"INTERETS_CHARGES":155,"CHARGES_GENERALES":2268,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"LBO","Nom":"LBO","Groupe_Bancaire":"Groupes Locaux","TOTAL_ACTIF":29599,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":14965,"EMPLOI":15473,"EFFECTIF":40,"AGENCE":2,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"LBO","Nom":"LA BANQUE OUTARDE","Groupe_Bancaire":null,"TOTAL_ACTIF":29453,"CAPITAUX_PROPRES":10821,"PRODUIT_NET_BANCAIRE":1945,"RESULTAT_NET":-1008,"CREANCES_CLIENTELE":15084,"DETTES_CLIENTELE":14657,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1439,"INTERETS_CHARGES":383,"CHARGES_GENERALES":2520,"COUT_RISQUE":46,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"LBO","Nom":"LA BANQUE OUTARDE","Groupe_Bancaire":null,"TOTAL_ACTIF":40480,"CAPITAUX_PROPRES":9887,"PRODUIT_NET_BANCAIRE":2412,"RESULTAT_NET":-934,"CREANCES_CLIENTELE":26423,"DETTES_CLIENTELE":18781,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":1943,"INTERETS_CHARGES":607,"CHARGES_GENERALES":2687,"COUT_RISQUE":177,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"LBO","Nom":"LA BANQUE OUTARDE","Groupe_Bancaire":null,"TOTAL_ACTIF":57493,"CAPITAUX_PROPRES":10912,"PRODUIT_NET_BANCAIRE":3030,"RESULTAT_NET":-475,"CREANCES_CLIENTELE":36794,"DETTES_CLIENTELE":37046,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":2838,"INTERETS_CHARGES":943,"CHARGES_GENERALES":2847,"COUT_RISQUE":210,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"NSIA Banque","Nom":"NSIA Banque","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":183519,"CAPITAUX_PROPRES":9470,"PRODUIT_NET_BANCAIRE":7530,"RESULTAT_NET":1573,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":119383,"EMPLOI":88509,"EFFECTIF":134,"AGENCE":8,"INTERETS_PRODUITS":10427,"INTERETS_CHARGES":5601,"CHARGES_GENERALES":4594,"COUT_RISQUE":384,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"NSIA Banque","Nom":"NSIA Banque","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":273646,"CAPITAUX_PROPRES":14634,"PRODUIT_NET_BANCAIRE":10638,"RESULTAT_NET":2678,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":191680,"EMPLOI":136612,"EFFECTIF":140,"AGENCE":12,"INTERETS_PRODUITS":14966,"INTERETS_CHARGES":7241,"CHARGES_GENERALES":7087,"COUT_RISQUE":231,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"NSIA Banque","Nom":"NSIA Banque","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":226494,"CAPITAUX_PROPRES":11937,"PRODUIT_NET_BANCAIRE":9483,"RESULTAT_NET":2462,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":164073,"EMPLOI":136428,"EFFECTIF":125,"AGENCE":10,"INTERETS_PRODUITS":11864,"INTERETS_CHARGES":5817,"CHARGES_GENERALES":5912,"COUT_RISQUE":419,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"NSIA Banque","Nom":"NSIA BANQUE BENIN, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":363157,"CAPITAUX_PROPRES":16376,"PRODUIT_NET_BANCAIRE":11714,"RESULTAT_NET":1761,"CREANCES_CLIENTELE":213528,"DETTES_CLIENTELE":263898,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":16082,"INTERETS_CHARGES":7984,"CHARGES_GENERALES":8258,"COUT_RISQUE":945,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"NSIA Banque","Nom":"NSIA Banque","Groupe_Bancaire":"Groupes Regionaux","TOTAL_ACTIF":363867,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":205412,"EMPLOI":159892,"EFFECTIF":150,"AGENCE":12,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"NSIA Banque","Nom":"NSIA BANQUE BENIN, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":439249,"CAPITAUX_PROPRES":19315,"PRODUIT_NET_BANCAIRE":13967,"RESULTAT_NET":2939,"CREANCES_CLIENTELE":220577,"DETTES_CLIENTELE":297767,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":21629,"INTERETS_CHARGES":10309,"CHARGES_GENERALES":9125,"COUT_RISQUE":1109,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"NSIA Banque","Nom":"NSIA BANQUE BENIN, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":510842,"CAPITAUX_PROPRES":23306,"PRODUIT_NET_BANCAIRE":16655,"RESULTAT_NET":3991,"CREANCES_CLIENTELE":280918,"DETTES_CLIENTELE":336882,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":29091,"INTERETS_CHARGES":15531,"CHARGES_GENERALES":10292,"COUT_RISQUE":1652,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":51230,"CAPITAUX_PROPRES":2700,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":42186,"EMPLOI":34069,"EFFECTIF":104,"AGENCE":7,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":96237,"CAPITAUX_PROPRES":5392,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":64658,"EMPLOI":62957,"EFFECTIF":124,"AGENCE":7,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":153547,"CAPITAUX_PROPRES":10199,"PRODUIT_NET_BANCAIRE":8785,"RESULTAT_NET":2355,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":108823,"EMPLOI":100431,"EFFECTIF":108,"AGENCE":7,"INTERETS_PRODUITS":7778,"INTERETS_CHARGES":4225,"CHARGES_GENERALES":6055,"COUT_RISQUE":67,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":212203,"CAPITAUX_PROPRES":12117,"PRODUIT_NET_BANCAIRE":11398,"RESULTAT_NET":1918,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":154036,"EMPLOI":126800,"EFFECTIF":116,"AGENCE":10,"INTERETS_PRODUITS":11707,"INTERETS_CHARGES":6411,"CHARGES_GENERALES":7247,"COUT_RISQUE":1099,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":312677,"CAPITAUX_PROPRES":15360,"PRODUIT_NET_BANCAIRE":15330,"RESULTAT_NET":3243,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":240227,"EMPLOI":187420,"EFFECTIF":138,"AGENCE":11,"INTERETS_PRODUITS":16151,"INTERETS_CHARGES":7508,"CHARGES_GENERALES":7700,"COUT_RISQUE":3261,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"ORABANK","Nom":"ORABANK Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":489722,"CAPITAUX_PROPRES":20722,"PRODUIT_NET_BANCAIRE":20778,"RESULTAT_NET":5363,"CREANCES_CLIENTELE":258008,"DETTES_CLIENTELE":375648,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":23183,"INTERETS_CHARGES":10763,"CHARGES_GENERALES":10025,"COUT_RISQUE":4547,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"ORABANK","Nom":"ORABANK","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":490396,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":277871,"EMPLOI":240373,"EFFECTIF":234,"AGENCE":13,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"ORABANK","Nom":"ORABANK Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":641156,"CAPITAUX_PROPRES":37030,"PRODUIT_NET_BANCAIRE":28720,"RESULTAT_NET":11307,"CREANCES_CLIENTELE":367558,"DETTES_CLIENTELE":458251,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":33042,"INTERETS_CHARGES":16387,"CHARGES_GENERALES":12951,"COUT_RISQUE":1719,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"ORABANK","Nom":"ORABANK Côte d'Ivoire, Succursale du Sénégal","Groupe_Bancaire":null,"TOTAL_ACTIF":835187,"CAPITAUX_PROPRES":50247,"PRODUIT_NET_BANCAIRE":37669,"RESULTAT_NET":7217,"CREANCES_CLIENTELE":464870,"DETTES_CLIENTELE":626552,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":41828,"INTERETS_CHARGES":20785,"CHARGES_GENERALES":16200,"COUT_RISQUE":12613,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":772490,"CAPITAUX_PROPRES":50180,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":629701,"EMPLOI":402026,"EFFECTIF":791,"AGENCE":42,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":735567,"CAPITAUX_PROPRES":40724,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":581340,"EMPLOI":380109,"EFFECTIF":801,"AGENCE":42,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":930330,"CAPITAUX_PROPRES":77976,"PRODUIT_NET_BANCAIRE":73502,"RESULTAT_NET":17715,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":771250,"EMPLOI":604658,"EFFECTIF":858,"AGENCE":39,"INTERETS_PRODUITS":44160,"INTERETS_CHARGES":12184,"CHARGES_GENERALES":40646,"COUT_RISQUE":7728,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":873873,"CAPITAUX_PROPRES":66261,"PRODUIT_NET_BANCAIRE":61701,"RESULTAT_NET":18363,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":674919,"EMPLOI":575167,"EFFECTIF":829,"AGENCE":40,"INTERETS_PRODUITS":38532,"INTERETS_CHARGES":11401,"CHARGES_GENERALES":37027,"COUT_RISQUE":3148,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":975391,"CAPITAUX_PROPRES":94662,"PRODUIT_NET_BANCAIRE":79001,"RESULTAT_NET":21997,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":801792,"EMPLOI":673354,"EFFECTIF":914,"AGENCE":40,"INTERETS_PRODUITS":59782,"INTERETS_CHARGES":13342,"CHARGES_GENERALES":43269,"COUT_RISQUE":2052,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"SGBS","Nom":"SOCIETE GENERALE SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":967133,"CAPITAUX_PROPRES":103706,"PRODUIT_NET_BANCAIRE":71628,"RESULTAT_NET":15544,"CREANCES_CLIENTELE":644311,"DETTES_CLIENTELE":789981,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":54774,"INTERETS_CHARGES":12719,"CHARGES_GENERALES":43833,"COUT_RISQUE":6492,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"SGBS","Nom":"SGBS","Groupe_Bancaire":"Groupes Internationaux","TOTAL_ACTIF":967133,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":757582,"EMPLOI":634939,"EFFECTIF":876,"AGENCE":38,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"SGBS","Nom":"SOCIETE GENERALE SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":1106364,"CAPITAUX_PROPRES":118677,"PRODUIT_NET_BANCAIRE":71746,"RESULTAT_NET":18070,"CREANCES_CLIENTELE":664236,"DETTES_CLIENTELE":914208,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":56026,"INTERETS_CHARGES":13972,"CHARGES_GENERALES":43690,"COUT_RISQUE":-436,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"SGBS","Nom":"SOCIETE GENERALE SENEGAL","Groupe_Bancaire":null,"TOTAL_ACTIF":1336404,"CAPITAUX_PROPRES":129958,"PRODUIT_NET_BANCAIRE":78444,"RESULTAT_NET":14902,"CREANCES_CLIENTELE":814220,"DETTES_CLIENTELE":1057130,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":59832,"INTERETS_CHARGES":14788,"CHARGES_GENERALES":47119,"COUT_RISQUE":178,"NEW_BANK":false},{"ANNEE":2015,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":146508,"CAPITAUX_PROPRES":22586,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":93989,"EMPLOI":63015,"EFFECTIF":132,"AGENCE":10,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2018,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":352079,"CAPITAUX_PROPRES":32945,"PRODUIT_NET_BANCAIRE":16704,"RESULTAT_NET":4374,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":191386,"EMPLOI":130247,"EFFECTIF":163,"AGENCE":10,"INTERETS_PRODUITS":9713,"INTERETS_CHARGES":4386,"CHARGES_GENERALES":10177,"COUT_RISQUE":443,"NEW_BANK":false},{"ANNEE":2019,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":221723,"CAPITAUX_PROPRES":30113,"PRODUIT_NET_BANCAIRE":15333,"RESULTAT_NET":168,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":174720,"EMPLOI":124559,"EFFECTIF":243,"AGENCE":10,"INTERETS_PRODUITS":15812,"INTERETS_CHARGES":4958,"CHARGES_GENERALES":13256,"COUT_RISQUE":326,"NEW_BANK":false},{"ANNEE":2016,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":208316,"CAPITAUX_PROPRES":26889,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":126938,"EMPLOI":80575,"EFFECTIF":133,"AGENCE":9,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2017,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":243242,"CAPITAUX_PROPRES":34022,"PRODUIT_NET_BANCAIRE":17292,"RESULTAT_NET":7149,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":163369,"EMPLOI":120187,"EFFECTIF":191,"AGENCE":10,"INTERETS_PRODUITS":10503,"INTERETS_CHARGES":4239,"CHARGES_GENERALES":7919,"COUT_RISQUE":340,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"UBA","Nom":"UNITED BANK FOR AFRICA","Groupe_Bancaire":null,"TOTAL_ACTIF":264834,"CAPITAUX_PROPRES":37471,"PRODUIT_NET_BANCAIRE":17250,"RESULTAT_NET":7358,"CREANCES_CLIENTELE":81665,"DETTES_CLIENTELE":169491,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":17715,"INTERETS_CHARGES":4265,"CHARGES_GENERALES":7198,"COUT_RISQUE":1803,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"UBA","Nom":"UBA","Groupe_Bancaire":"Groupes Continentaux","TOTAL_ACTIF":266195,"CAPITAUX_PROPRES":null,"PRODUIT_NET_BANCAIRE":null,"RESULTAT_NET":null,"CREANCES_CLIENTELE":null,"DETTES_CLIENTELE":null,"RESSOURCES":164610,"EMPLOI":93978,"EFFECTIF":184,"AGENCE":10,"INTERETS_PRODUITS":null,"INTERETS_CHARGES":null,"CHARGES_GENERALES":null,"COUT_RISQUE":null,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"UBA","Nom":"UNITED BANK FOR AFRICA","Groupe_Bancaire":null,"TOTAL_ACTIF":369749,"CAPITAUX_PROPRES":42109,"PRODUIT_NET_BANCAIRE":16590,"RESULTAT_NET":9280,"CREANCES_CLIENTELE":119030,"DETTES_CLIENTELE":252497,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":17365,"INTERETS_CHARGES":4805,"CHARGES_GENERALES":7754,"COUT_RISQUE":-1415,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"UBA","Nom":"UNITED BANK FOR AFRICA","Groupe_Bancaire":null,"TOTAL_ACTIF":452145,"CAPITAUX_PROPRES":41917,"PRODUIT_NET_BANCAIRE":20111,"RESULTAT_NET":5645,"CREANCES_CLIENTELE":115693,"DETTES_CLIENTELE":256812,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":21003,"INTERETS_CHARGES":5305,"CHARGES_GENERALES":9561,"COUT_RISQUE":4096,"NEW_BANK":false},{"ANNEE":2020,"Sigle":"CISA","Nom":"CREDIT INTERNATIONAL","Groupe_Bancaire":null,"TOTAL_ACTIF":54146,"CAPITAUX_PROPRES":12894,"PRODUIT_NET_BANCAIRE":2715,"RESULTAT_NET":254,"CREANCES_CLIENTELE":23112,"DETTES_CLIENTELE":36647,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":3681,"INTERETS_CHARGES":1568,"CHARGES_GENERALES":2032,"COUT_RISQUE":217,"NEW_BANK":false},{"ANNEE":2021,"Sigle":"CISA","Nom":"CREDIT INTERNATIONAL","Groupe_Bancaire":null,"TOTAL_ACTIF":54757,"CAPITAUX_PROPRES":13021,"PRODUIT_NET_BANCAIRE":2525,"RESULTAT_NET":128,"CREANCES_CLIENTELE":22525,"DETTES_CLIENTELE":37198,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":3302,"INTERETS_CHARGES":1397,"CHARGES_GENERALES":2017,"COUT_RISQUE":197,"NEW_BANK":false},{"ANNEE":2022,"Sigle":"CISA","Nom":"CREDIT INTERNATIONAL","Groupe_Bancaire":null,"TOTAL_ACTIF":57716,"CAPITAUX_PROPRES":13150,"PRODUIT_NET_BANCAIRE":2469,"RESULTAT_NET":129,"CREANCES_CLIENTELE":21392,"DETTES_CLIENTELE":38258,"RESSOURCES":null,"EMPLOI":null,"EFFECTIF":null,"AGENCE":null,"INTERETS_PRODUITS":3363,"INTERETS_CHARGES":1477,"CHARGES_GENERALES":1930,"COUT_RISQUE":237,"NEW_BANK":false}];
+
+function repairText(value) {
+  if (typeof value !== 'string') return value;
+  let text = value;
+  if (/[\u00C2\u00C3\u00E2\u00F0]/.test(text)) {
+    try {
+      text = decodeURIComponent(escape(text));
+    } catch (error) {
+      text = text;
+    }
+  }
+  return text;
+}
+
+function normalizeGroup(value) {
+  const text = repairText(value || '');
+  if (!text) return null;
+  const plain = text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (plain.includes('Locaux')) return 'Groupes Locaux';
+  if (plain.includes('Regionaux')) return 'Groupes Regionaux';
+  if (plain.includes('Continentaux')) return 'Groupes Continentaux';
+  if (plain.includes('Internationaux')) return 'Groupes Internationaux';
+  return plain;
+}
+
+function normalizeRecord(record) {
+  const next = { ...record };
+  ['Sigle', 'Nom', 'Groupe_Bancaire'].forEach((key) => {
+    if (typeof next[key] === 'string') next[key] = repairText(next[key]);
+  });
+  next.Groupe_Bancaire = normalizeGroup(next.Groupe_Bancaire);
+  return next;
+}
+
+function normalizeTextNodes(root = document.body) {
+  const skip = new Set(['SCRIPT', 'STYLE']);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !/[\u00C2\u00C3\u00E2\u00F0]/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+      if (skip.has(node.parentNode && node.parentNode.nodeName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    node.nodeValue = repairText(node.nodeValue);
+  });
+}
+
+function refreshStaticLabels() {
+  document.title = 'Secteur bancaire s\u00E9n\u00E9galais - Dashboard ISM';
+  normalizeTextNodes(document.body);
+
+  const filterLabels = ['Ann\u00E9e', 'Groupe', 'Banque'];
+  document.querySelectorAll('.filter-group label').forEach((label, index) => {
+    if (filterLabels[index]) label.textContent = filterLabels[index];
+  });
+
+  const tabs = [
+    'Vue sectorielle',
+    'Bilan et structure',
+    'Ratios financiers',
+    'Classement',
+    'Comparaison',
+    'Analyse banque',
+    'Carte et r\u00E9seau',
+    'Donn\u00E9es'
+  ];
+  document.querySelectorAll('.tab').forEach((tab, index) => {
+    if (tabs[index]) tab.textContent = tabs[index];
+  });
+
+  const headerTitle = document.querySelector('.header-title');
+  if (headerTitle) headerTitle.textContent = 'Secteur bancaire s\u00E9n\u00E9galais';
+
+  const headerSub = document.querySelector('.header-sub');
+  if (headerSub) headerSub.textContent = 'Tableau de bord analytique \u00B7 2015-2022 \u00B7 M2 Big Data';
+
+  const pdfButton = document.querySelector('button.btn-pdf.no-print');
+  if (pdfButton) pdfButton.textContent = 'Exporter PDF';
+
+  const resetButton = document.querySelector('.btn-reset');
+  if (resetButton) resetButton.textContent = 'R\u00E9initialiser';
+
+  const groupLabels = {
+    all: 'Tous',
+    'Groupes Locaux': 'Locaux',
+    'Groupes Regionaux': 'R\u00E9gionaux',
+    'Groupes Continentaux': 'Continentaux',
+    'Groupes Internationaux': 'Internationaux'
+  };
+  const groupSelect = document.getElementById('f-groupe');
+  if (groupSelect) {
+    Array.from(groupSelect.options).forEach((option) => {
+      option.value = option.value === 'all' ? 'all' : normalizeGroup(option.value);
+      option.textContent = groupLabels[option.value] || repairText(option.textContent);
+    });
+  }
+
+  const titleMap = [
+    ['#ch-emp-res-ratio', '<span class="dot red"></span>Top 10 banques - ratio emplois/ressources'],
+    ['#ch-roa-banks', '<span class="dot green"></span>Top 10 ROA par banque'],
+    ['#ch-cir-banks', '<span class="dot red"></span>Top 10 coefficient d\u2019exploitation (%)'],
+    ['#ch-agences', '<span class="dot gold"></span>Top 10 agences par banque'],
+    ['#ch-effectif', '<span class="dot purple"></span>Top 10 effectifs par banque']
+  ];
+  titleMap.forEach(([selector, html]) => {
+    const title = document.querySelector(selector)?.closest('.card')?.querySelector('.card-title');
+    if (title) title.innerHTML = html;
+  });
+}
+
+function mergeData(raw) {
+  const map = {};
+  raw.forEach(item => {
+    const d = normalizeRecord(item);
+    const key = d.ANNEE + '_' + d.Sigle;
+    if (!map[key]) { map[key] = {...d}; }
+    else {
+      Object.keys(d).forEach(k => {
+        if ((map[key][k] === null || map[key][k] === undefined) && d[k] !== null && d[k] !== undefined) map[key][k] = d[k];
+        if (k === 'Groupe_Bancaire' && d[k] && !map[key][k]) map[key][k] = d[k];
+      });
+    }
+  });
+  return Object.values(map);
+}
+
+const DATA = mergeData(RAW);
+const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022];
+const ALL_SIGLES = [...new Set(DATA.map(d => d.Sigle))].sort();
+const TOP_BANK_LIMIT = 10;
+
+// ── RATIOS ──
+DATA.forEach(d => {
+  d._roa = (d.RESULTAT_NET && d.TOTAL_ACTIF) ? +(d.RESULTAT_NET / d.TOTAL_ACTIF * 100).toFixed(2) : null;
+  d._roe = (d.RESULTAT_NET && d.CAPITAUX_PROPRES) ? +(d.RESULTAT_NET / d.CAPITAUX_PROPRES * 100).toFixed(2) : null;
+  d._nim = (d.INTERETS_PRODUITS && d.INTERETS_CHARGES && d.TOTAL_ACTIF) ? +((d.INTERETS_PRODUITS - d.INTERETS_CHARGES) / d.TOTAL_ACTIF * 100).toFixed(2) : null;
+  d._cir = (d.CHARGES_GENERALES && d.PRODUIT_NET_BANCAIRE && d.PRODUIT_NET_BANCAIRE > 0) ? +(d.CHARGES_GENERALES / d.PRODUIT_NET_BANCAIRE * 100).toFixed(1) : null;
+  d._cr  = (d.COUT_RISQUE && d.PRODUIT_NET_BANCAIRE && d.PRODUIT_NET_BANCAIRE > 0) ? +(d.COUT_RISQUE / d.PRODUIT_NET_BANCAIRE * 100).toFixed(1) : null;
+});
+
+// ── CHARTS REGISTRY ──
+const CH = {};
+function dc(id) { if (CH[id]) { CH[id].destroy(); delete CH[id]; } }
+function repairConfig(value) {
+  if (typeof value === 'string') return repairText(value);
+  if (Array.isArray(value)) return value.map(repairConfig);
+  if (value && typeof value === 'object') {
+    Object.keys(value).forEach((key) => { value[key] = repairConfig(value[key]); });
+  }
+  return value;
+}
+function makeChart(element, config) {
+  return new Chart(element, repairConfig(config));
+}
+
+// ── COLORS ──
+const PALETTE = ['#1a5276','#27ae60','#d4a017','#e74c3c','#8e44ad','#16a085','#d35400','#2980b9','#c0392b','#f39c12'];
+const GC = { 'Groupes Locaux':'#27ae60','Groupes Regionaux':'#2980b9','Groupes Continentaux':'#d4a017','Groupes Internationaux':'#8e44ad' };
+const gc = g => GC[g] || '#bdc3c7';
+
+function gbadge(g) {
+  if (!g) return '<span class="badge bn">N/A</span>';
+  if (g.includes('Local')) return `<span class="badge bl">Local</span>`;
+  if (g.includes('gional')||g.includes('gionaux')) return `<span class="badge br">Régional</span>`;
+  if (g.includes('Continental')) return `<span class="badge bc">Continental</span>`;
+  if (g.includes('Intern')) return `<span class="badge bi">International</span>`;
+  return `<span class="badge bn">${g}</span>`;
+}
+
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+Chart.defaults.font.size=12;
+Chart.defaults.color='#7f8c8d';
+
+// ── FILTERS ──
+function gf() {
+  return {
+    annee: document.getElementById('f-annee').value,
+    groupe: document.getElementById('f-groupe').value,
+    banque: document.getElementById('f-banque').value
+  };
+}
+function fd() {
+  const f = gf();
+  return DATA.filter(d =>
+    (f.annee==='all' || d.ANNEE===+f.annee) &&
+    (f.groupe==='all' || d.Groupe_Bancaire===f.groupe) &&
+    (f.banque==='all' || d.Sigle===f.banque)
+  );
+}
+
+function fmt(v, mds=false) {
+  if (v===null||v===undefined||isNaN(v)) return '—';
+  if (mds) return (v/1000).toFixed(1)+' Mds';
+  return (+v).toLocaleString('fr-FR');
+}
+function fmds(v) { return fmt(v, true); }
+function avg(arr) { const a=arr.filter(x=>x!==null&&x!==undefined); return a.length?a.reduce((s,x)=>s+x,0)/a.length:null; }
+function sum(arr, f) { return arr.reduce((s,d)=>s+(d[f]||0),0); }
+
+function pillHtml(title, detail, tone='neutral') {
+  return `<span class="kpi-trend ${tone}"><strong>${title}</strong><small>${detail}</small></span>`;
+}
+
+function trendHtml(cur, prev, fallbackTitle='Lecture', fallbackDetail='Perimetre') {
+  if (!cur||!prev||prev===0) return pillHtml(fallbackTitle, fallbackDetail, 'neutral');
+  const p=((cur-prev)/Math.abs(prev)*100);
+  const direction=p>=0?'up':'down';
+  const arrow=p>=0?'&#8593;':'&#8595;';
+  return `<span class="kpi-trend ${direction}"><strong>${arrow} ${Math.abs(p).toFixed(1)}%</strong><small>vs N-1</small></span>`;
+}
+
+// ── INIT BANK FILTER ──
+function initBankFilter() {
+  const sel=document.getElementById('f-banque');
+  ALL_SIGLES.forEach(b=>{ const o=document.createElement('option'); o.value=b; o.textContent=b; sel.appendChild(o); });
+}
+
+// ------------------------------------------------------------
+// KPI CARDS
+// ------------------------------------------------------------
+function renderKPIs() {
+  const f=gf(), d=fd();
+  const ta=sum(d,'TOTAL_ACTIF'), pnb=sum(d,'PRODUIT_NET_BANCAIRE');
+  const rn=sum(d,'RESULTAT_NET'), cp=sum(d,'CAPITAUX_PROPRES');
+  const nb=[...new Set(d.map(r=>r.Sigle))].length;
+  const roaAvg=avg(d.map(r=>r._roa));
+  const roeAvg=avg(d.map(r=>r._roe));
+  const periodLabel=f.annee==='all'?'2015-2022':`Exercice ${f.annee}`;
+  const scopeLabel=f.banque!=='all'?f.banque:(f.groupe!=='all'?f.groupe.replace('Groupes ',''):'Secteur');
+  let prevTa=null,prevPnb=null,prevRn=null;
+  if (f.annee!=='all') {
+    const py=+f.annee-1;
+    const pd=DATA.filter(r=>r.ANNEE===py&&(f.groupe==='all'||r.Groupe_Bancaire===f.groupe)&&(f.banque==='all'||r.Sigle===f.banque));
+    prevTa=sum(pd,'TOTAL_ACTIF'); prevPnb=sum(pd,'PRODUIT_NET_BANCAIRE'); prevRn=sum(pd,'RESULTAT_NET');
+  }
+  const kpis=[
+    {l:'Total Actif', code:'ACTIF', v:fmds(ta), s:'Volume consolide du secteur bancaire', meta:'Base FCFA', ctx:periodLabel, pill:trendHtml(ta,prevTa,'Base',periodLabel), c:'featured navy'},
+    {l:'PNB Sectoriel', code:'PNB', v:fmds(pnb), s:'Produit net bancaire cumule', meta:'Performance', ctx:scopeLabel, pill:trendHtml(pnb,prevPnb,'Focus',scopeLabel), c:'gold'},
+    {l:'Resultat Net', code:'RN', v:fmds(rn), s:'Profitabilite nette observee', meta:'Rentabilite', ctx:periodLabel, pill:trendHtml(rn,prevRn,'Signal',scopeLabel), c:rn>=0?'green':'red'},
+    {l:'Capitaux Propres', code:'CP', v:fmds(cp), s:'Fonds propres consolides', meta:'Solidite', ctx:scopeLabel, pill:pillHtml('Structure','fonds propres','neutral'), c:'navy'},
+    {l:'Banques actives', code:'BANKS', v:nb, s:'Institutions incluses dans le filtre', meta:'Couverture', ctx:periodLabel, pill:pillHtml('Perimetre',scopeLabel,'neutral'), c:''},
+    {l:'ROA moyen', code:'ROA', v:roaAvg!==null?roaAvg.toFixed(2)+'%':'N/A', s:'Rentabilite de l actif moyen', meta:'Rendement', ctx:scopeLabel, pill:pillHtml('Lecture','actif','neutral'), c:'purple'},
+    {l:'ROE moyen', code:'ROE', v:roeAvg!==null?roeAvg.toFixed(1)+'%':'N/A', s:'Rentabilite des fonds propres', meta:'Rendement', ctx:scopeLabel, pill:pillHtml('Lecture','fonds propres','neutral'), c:'gold'},
+  ];
+  const g=document.getElementById('kpi-grid');
+  g.innerHTML='';
+  kpis.forEach(k=>{
+    g.innerHTML+=`<div class="kpi-card ${k.c}"><div class="kpi-head"><div class="kpi-label">${k.l}</div><div class="kpi-chip">${k.code}</div></div><div class="kpi-value-row"><div><div class="kpi-value">${k.v}</div><div class="kpi-sub">${k.s}</div></div>${k.pill}</div><div class="kpi-meta"><span class="kpi-context">${k.meta}</span><span class="kpi-context">${k.ctx}</span></div></div>`;
+  });
+}
+
+// ------------------------------------------------------------
+// SECTEUR
+// ------------------------------------------------------------
+function sectorSeries(field) {
+  const f=gf();
+  return YEARS.map(y=>{
+    const yr=DATA.filter(d=>d.ANNEE===y&&(f.groupe==='all'||d.Groupe_Bancaire===f.groupe)&&(f.banque==='all'||d.Sigle===f.banque));
+    return +(yr.reduce((s,d)=>s+(d[field]||0),0)/1000).toFixed(1);
+  });
+}
+function lineOpts(label, color) {
+  const safeLabel = repairText(label || '');
+  return {
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false, callbacks:{label:ctx=>` ${safeLabel||repairText(ctx.dataset.label)}: ${ctx.parsed.y}`}} },
+    scales:{ x:{grid:{display:false}}, y:{grid:{color:'#edf0f2'}} }
+  };
+}
+
+function renderSecteur() {
+  const f=gf();
+  // Actif
+  dc('actif-evol');
+  CH['actif-evol']=makeChart(document.getElementById('ch-actif-evol'),{
+    type:'line', data:{labels:YEARS, datasets:[{label:'Total Actif', data:sectorSeries('TOTAL_ACTIF'), borderColor:'#1a5276', backgroundColor:'rgba(26,82,118,0.08)', borderWidth:2.5, pointRadius:4, tension:0.3, fill:true}]},
+    options:lineOpts('Total Actif','#1a5276')
+  });
+  // Donut
+  dc('grp-donut');
+  const grps=['Groupes Locaux','Groupes Regionaux','Groupes Continentaux','Groupes Internationaux'];
+  const y=f.annee==='all'?null:+f.annee;
+  const grpTot=grps.map(g=>DATA.filter(d=>(y?d.ANNEE===y:true)&&d.Groupe_Bancaire===g&&(f.banque==='all'||d.Sigle===f.banque)).reduce((s,d)=>s+(d.TOTAL_ACTIF||0),0)/1000);
+  CH['grp-donut']=makeChart(document.getElementById('ch-groupe-donut'),{
+    type:'doughnut', data:{labels:['Locaux','Régionaux','Continentaux','Internationaux'], datasets:[{data:grpTot, backgroundColor:grps.map(g=>gc(g)), borderWidth:2, borderColor:'#fff'}]},
+    options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom',labels:{padding:12,usePointStyle:true,pointStyleWidth:10}}, tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed.toFixed(0)} Mds (${(ctx.parsed/ctx.dataset.data.reduce((a,b)=>a+b,0)*100).toFixed(1)}%)`}}}}
+  });
+  // PNB
+  dc('pnb-evol');
+  CH['pnb-evol']=makeChart(document.getElementById('ch-pnb-evol'),{
+    type:'bar', data:{labels:YEARS, datasets:[{label:'PNB', data:sectorSeries('PRODUIT_NET_BANCAIRE'), backgroundColor:'rgba(39,174,96,0.75)', borderColor:'#27ae60', borderWidth:1.5, borderRadius:5}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` PNB: ${ctx.parsed.y} Mds FCFA`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+  // RN
+  dc('rn-evol');
+  CH['rn-evol']=makeChart(document.getElementById('ch-rn-evol'),{
+    type:'line', data:{labels:YEARS, datasets:[{label:'Résultat Net', data:sectorSeries('RESULTAT_NET'), borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.07)', borderWidth:2.5, pointRadius:4, tension:0.3, fill:true}]},
+    options:lineOpts('Résultat Net','#e74c3c')
+  });
+  // Ressources & Emplois
+  dc('res-emp');
+  CH['res-emp']=makeChart(document.getElementById('ch-res-emp'),{
+    type:'line',
+    data:{labels:YEARS, datasets:[
+      {label:'Ressources', data:sectorSeries('RESSOURCES'), borderColor:'#0f2b4c', backgroundColor:'rgba(15,43,76,0.08)', borderWidth:2.5, pointRadius:4, tension:0.3, fill:true},
+      {label:'Emplois (Crédits)', data:sectorSeries('EMPLOI'), borderColor:'#d4a017', backgroundColor:'rgba(212,160,23,0.05)', borderWidth:2.5, pointRadius:4, tension:0.3, fill:false},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+  // CP
+  dc('cp-evol');
+  CH['cp-evol']=makeChart(document.getElementById('ch-cp-evol'),{
+    type:'bar', data:{labels:YEARS, datasets:[{label:'Capitaux Propres', data:sectorSeries('CAPITAUX_PROPRES'), backgroundColor:'rgba(142,68,173,0.7)', borderColor:'#8e44ad', borderWidth:1.5, borderRadius:5}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y} Mds FCFA`}}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+}
+
+// ------------------------------------------------------------
+// BILAN
+// ------------------------------------------------------------
+function renderBilan() {
+  const f=gf(), d=fd();
+  const ta=sum(d,'TOTAL_ACTIF'), emp=sum(d,'EMPLOI'), res=sum(d,'RESSOURCES');
+  const cp=sum(d,'CAPITAUX_PROPRES'), cr=sum(d,'CREANCES_CLIENTELE'), dc2=sum(d,'DETTES_CLIENTELE');
+
+  // KPIs
+  const bk=document.getElementById('bilan-kpis');
+  bk.innerHTML=`
+    <div class="kpi-card"><div class="kpi-label">Total Actif / Passif</div><div class="kpi-value">${fmds(ta)}</div><div class="kpi-sub">FCFA</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Emplois (Crédits)</div><div class="kpi-value">${fmds(emp)}</div><div class="kpi-sub">Placements & Crédits</div></div>
+    <div class="kpi-card gold"><div class="kpi-label">Ressources (Dépôts)</div><div class="kpi-value">${fmds(res)}</div><div class="kpi-sub">Financement</div></div>
+    <div class="kpi-card navy"><div class="kpi-label">Capitaux Propres</div><div class="kpi-value">${fmds(cp)}</div><div class="kpi-sub">Fonds Propres</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Créances Clientèle</div><div class="kpi-value">${fmds(cr)}</div><div class="kpi-sub">Actif</div></div>
+    <div class="kpi-card red"><div class="kpi-label">Dettes Clientèle</div><div class="kpi-value">${fmds(dc2)}</div><div class="kpi-sub">Passif</div></div>`;
+
+  // Actif par banque (grouped bar: Emplois vs Total Actif)
+  dc('bilan-actif');
+  const banks=aggregateBanks(d).sort((a,b)=>b.ta-a.ta).slice(0,TOP_BANK_LIMIT);
+  CH['bilan-actif']=makeChart(document.getElementById('ch-bilan-actif'),{
+    type:'bar',
+    data:{labels:banks.map(b=>b.sigle), datasets:[
+      {label:'Total Actif', data:banks.map(b=>(b.ta/1000).toFixed(1)), backgroundColor:'rgba(26,82,118,0.7)', borderRadius:4},
+      {label:'Emplois', data:banks.map(b=>(b.emp/1000).toFixed(1)), backgroundColor:'rgba(212,160,23,0.7)', borderRadius:4},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+
+  // Passif par banque
+  dc('bilan-passif');
+  CH['bilan-passif']=makeChart(document.getElementById('ch-bilan-passif'),{
+    type:'bar',
+    data:{labels:banks.map(b=>b.sigle), datasets:[
+      {label:'Ressources', data:banks.map(b=>(b.res/1000).toFixed(1)), backgroundColor:'rgba(39,174,96,0.7)', borderRadius:4},
+      {label:'Capitaux Propres', data:banks.map(b=>(b.cp/1000).toFixed(1)), backgroundColor:'rgba(142,68,173,0.7)', borderRadius:4},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+
+  // Créances vs Dettes evolution
+  dc('creances-dettes');
+  CH['creances-dettes']=makeChart(document.getElementById('ch-creances-dettes'),{
+    type:'line',
+    data:{labels:YEARS, datasets:[
+      {label:'Créances Clientèle', data:YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y); return +(yr.reduce((s,d)=>s+(d.CREANCES_CLIENTELE||0),0)/1000).toFixed(1); }), borderColor:'#2980b9', backgroundColor:'rgba(41,128,185,0.1)', borderWidth:2.5, tension:0.3, fill:true, spanGaps:true},
+      {label:'Dettes Clientèle', data:YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y); return +(yr.reduce((s,d)=>s+(d.DETTES_CLIENTELE||0),0)/1000).toFixed(1); }), borderColor:'#e74c3c', backgroundColor:'rgba(231,76,60,0.07)', borderWidth:2.5, tension:0.3, fill:false, spanGaps:true},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+
+  // Emplois/Ressources ratio
+  dc('emp-res-ratio');
+  const ratioData=d.filter(r=>r.EMPLOI&&r.RESSOURCES&&r.RESSOURCES>0).map(r=>({sigle:r.Sigle, ratio:+(r.EMPLOI/r.RESSOURCES*100).toFixed(1)})).sort((a,b)=>b.ratio-a.ratio).slice(0,TOP_BANK_LIMIT);
+  CH['emp-res-ratio']=makeChart(document.getElementById('ch-emp-res-ratio'),{
+    type:'bar',
+    data:{labels:ratioData.map(r=>r.sigle), datasets:[{label:'Emplois/Ressources (%)', data:ratioData.map(r=>r.ratio), backgroundColor:ratioData.map(r=>r.ratio>100?'rgba(231,76,60,0.75)':'rgba(39,174,96,0.75)'), borderRadius:5, borderWidth:1}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x}%`}}},scales:{x:{grid:{color:'#edf0f2'},min:0},y:{grid:{display:false}}}}
+  });
+}
+
+// ------------------------------------------------------------
+// RATIOS FINANCIERS
+// ------------------------------------------------------------
+function renderRatios() {
+  const f=gf(), d=fd();
+  const roaAvg=avg(d.map(r=>r._roa)), roeAvg=avg(d.map(r=>r._roe));
+  const nimAvg=avg(d.map(r=>r._nim)), cirAvg=avg(d.map(r=>r._cir)), crAvg=avg(d.map(r=>r._cr));
+
+  // Ratio Cards
+  const rc=document.getElementById('ratio-cards');
+  rc.innerHTML='';
+  const ratioList=[
+    {n:'ROA — Rentabilité des Actifs', v:roaAvg, pct:true, max:5, desc:'Résultat Net / Total Actif × 100', color:'#2980b9', ref:'> 1% = bon'},
+    {n:'ROE — Rentabilité des Fonds Propres', v:roeAvg, pct:true, max:30, desc:'Résultat Net / Capitaux Propres × 100', color:'#27ae60', ref:'> 10% = acceptable'},
+    {n:'NIM — Marge Nette d\'Intérêt', v:nimAvg, pct:true, max:8, desc:'(Int. Produits − Int. Charges) / Total Actif', color:'#d4a017', ref:'> 3% = bon'},
+    {n:'Coeff. d\'Exploitation (CIR)', v:cirAvg, pct:true, max:100, desc:'Charges Générales / PNB × 100', color:'#e74c3c', ref:'< 60% = efficace'},
+    {n:'Coût du Risque / PNB', v:crAvg, pct:true, max:50, desc:'Coût Risque / PNB × 100', color:'#8e44ad', ref:'< 20% = faible risque'},
+  ];
+  ratioList.forEach(r=>{
+    const val=r.v!==null?r.v.toFixed(2)+'%':'—';
+    const pct=r.v!==null?Math.min(Math.abs(r.v)/r.max*100,100):0;
+    rc.innerHTML+=`<div class="ratio-card">
+      <div class="ratio-name">${r.n}</div>
+      <div class="ratio-value" style="color:${r.color}">${val}</div>
+      <div class="ratio-bar-bg"><div class="ratio-bar-fill" style="width:${pct}%;background:${r.color}"></div></div>
+      <div class="ratio-desc">${r.desc}<br><em>${r.ref}</em></div>
+    </div>`;
+  });
+
+  // ROA & ROE evolution
+  dc('roa-roe');
+  const roaEvol=YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y&&d._roa!==null); return yr.length?+(yr.reduce((s,d)=>s+d._roa,0)/yr.length).toFixed(2):null; });
+  const roeEvol=YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y&&d._roe!==null); return yr.length?+(yr.reduce((s,d)=>s+d._roe,0)/yr.length).toFixed(2):null; });
+  CH['roa-roe']=makeChart(document.getElementById('ch-roa-roe'),{
+    type:'line',
+    data:{labels:YEARS, datasets:[
+      {label:'ROA (%)', data:roaEvol, borderColor:'#2980b9', borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true, yAxisID:'y'},
+      {label:'ROE (%)', data:roeEvol, borderColor:'#27ae60', borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true, yAxisID:'y1'},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'ROA %'},grid:{color:'#edf0f2'}},y1:{position:'right',title:{display:true,text:'ROE %'},grid:{display:false}}}}
+  });
+
+  // NIM & CIR evolution
+  dc('nim-cir');
+  const nimEvol=YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y&&d._nim!==null); return yr.length?+(yr.reduce((s,d)=>s+d._nim,0)/yr.length).toFixed(2):null; });
+  const cirEvol=YEARS.map(y=>{ const yr=DATA.filter(d=>d.ANNEE===y&&d._cir!==null); return yr.length?+(yr.reduce((s,d)=>s+d._cir,0)/yr.length).toFixed(1):null; });
+  CH['nim-cir']=makeChart(document.getElementById('ch-nim-cir'),{
+    type:'line',
+    data:{labels:YEARS, datasets:[
+      {label:'NIM (%)', data:nimEvol, borderColor:'#d4a017', borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true, yAxisID:'y'},
+      {label:'CIR (%)', data:cirEvol, borderColor:'#e74c3c', borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true, yAxisID:'y1'},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'NIM %'},grid:{color:'#edf0f2'}},y1:{position:'right',title:{display:true,text:'CIR %'},grid:{display:false}}}}
+  });
+
+  // ROA per bank
+  dc('roa-banks');
+  const bRoa=fd().filter(r=>r._roa!==null).sort((a,b)=>b._roa-a._roa).slice(0,TOP_BANK_LIMIT);
+  CH['roa-banks']=makeChart(document.getElementById('ch-roa-banks'),{
+    type:'bar',
+    data:{labels:bRoa.map(r=>r.Sigle), datasets:[{label:'ROA %', data:bRoa.map(r=>r._roa), backgroundColor:bRoa.map(r=>r._roa>=1?'rgba(39,174,96,0.75)':r._roa>=0?'rgba(41,128,185,0.75)':'rgba(231,76,60,0.75)'), borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ROA: ${ctx.parsed.x}%`}}},scales:{x:{grid:{color:'#edf0f2'}},y:{grid:{display:false}}}}
+  });
+
+  // CIR per bank
+  dc('cir-banks');
+  const bCir=fd().filter(r=>r._cir!==null).sort((a,b)=>a._cir-b._cir).slice(0,TOP_BANK_LIMIT);
+  CH['cir-banks']=makeChart(document.getElementById('ch-cir-banks'),{
+    type:'bar',
+    data:{labels:bCir.map(r=>r.Sigle), datasets:[{label:'CIR %', data:bCir.map(r=>r._cir), backgroundColor:bCir.map(r=>r._cir<60?'rgba(39,174,96,0.75)':r._cir<75?'rgba(212,160,23,0.75)':'rgba(231,76,60,0.75)'), borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` CIR: ${ctx.parsed.x}%`}}},scales:{x:{grid:{color:'#edf0f2'},max:120},y:{grid:{display:false}}}}
+  });
+}
+
+// ------------------------------------------------------------
+// AGGREGATE BANKS
+// ------------------------------------------------------------
+function aggregateBanks(d) {
+  const m={};
+  d.forEach(r=>{
+    if (!m[r.Sigle]) m[r.Sigle]={sigle:r.Sigle,groupe:r.Groupe_Bancaire,ta:0,pnb:0,rn:0,cp:0,res:0,emp:0,cnt:0,roas:[],roes:[]};
+    m[r.Sigle].ta+=(r.TOTAL_ACTIF||0); m[r.Sigle].pnb+=(r.PRODUIT_NET_BANCAIRE||0);
+    m[r.Sigle].rn+=(r.RESULTAT_NET||0); m[r.Sigle].cp+=(r.CAPITAUX_PROPRES||0);
+    m[r.Sigle].res+=(r.RESSOURCES||0); m[r.Sigle].emp+=(r.EMPLOI||0); m[r.Sigle].cnt++;
+    if (r._roa!==null) m[r.Sigle].roas.push(r._roa);
+    if (r._roe!==null) m[r.Sigle].roes.push(r._roe);
+    if (!m[r.Sigle].groupe && r.Groupe_Bancaire) m[r.Sigle].groupe=r.Groupe_Bancaire;
+  });
+  return Object.values(m).map(b=>({...b, roa:b.roas.length?+(b.roas.reduce((s,x)=>s+x,0)/b.roas.length).toFixed(2):null, roe:b.roes.length?+(b.roes.reduce((s,x)=>s+x,0)/b.roes.length).toFixed(1):null }));
+}
+
+// ------------------------------------------------------------
+// CLASSEMENT
+// ------------------------------------------------------------
+function renderClassement() {
+  const banks=aggregateBanks(fd()).sort((a,b)=>b.ta-a.ta);
+  const top10=banks.slice(0,10);
+  const topPnb=[...banks].sort((a,b)=>b.pnb-a.pnb).slice(0,10);
+
+  dc('top-actif');
+  CH['top-actif']=makeChart(document.getElementById('ch-top-actif'),{
+    type:'bar',
+    data:{labels:top10.map(b=>b.sigle), datasets:[{label:'Total Actif', data:top10.map(b=>(b.ta/1000).toFixed(1)), backgroundColor:top10.map(b=>gc(b.groupe)+'cc'), borderColor:top10.map(b=>gc(b.groupe)), borderWidth:1.5, borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x} Mds FCFA`}}},scales:{x:{grid:{color:'#edf0f2'}},y:{grid:{display:false}}}}
+  });
+
+  dc('top-pnb');
+  CH['top-pnb']=makeChart(document.getElementById('ch-top-pnb'),{
+    type:'bar',
+    data:{labels:topPnb.map(b=>b.sigle), datasets:[{label:'PNB', data:topPnb.map(b=>(b.pnb/1000).toFixed(1)), backgroundColor:'rgba(39,174,96,0.75)', borderColor:'#27ae60', borderWidth:1.5, borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.x} Mds FCFA`}}},scales:{x:{grid:{color:'#edf0f2'}},y:{grid:{display:false}}}}
+  });
+
+  const tbody=document.getElementById('ranking-tbody'); tbody.innerHTML='';
+  banks.forEach((b,i)=>{
+    const rnc=b.rn>0?'color:#27ae60;font-weight:600':b.rn<0?'color:#e74c3c;font-weight:600':'';
+    tbody.innerHTML+=`<tr>
+      <td class="rank">${i+1}</td><td><strong>${b.sigle}</strong></td><td>${gbadge(b.groupe)}</td>
+      <td class="nr">${fmds(b.ta)}</td><td class="nr">${b.pnb>0?fmds(b.pnb):'—'}</td>
+      <td class="nr" style="${rnc}">${b.rn!==0?fmds(b.rn):'—'}</td><td class="nr">${b.cp>0?fmds(b.cp):'—'}</td>
+      <td class="nr">${b.roa!==null?b.roa+'%':'—'}</td><td class="nr">${b.roe!==null?b.roe+'%':'—'}</td></tr>`;
+  });
+}
+
+// ------------------------------------------------------------
+// COMPARAISON
+// ------------------------------------------------------------
+let selectedBanks = ['SGBS','CBAO','ECOBANK'];
+function initCompareCheckboxes() {
+  const c=document.getElementById('compare-checkboxes');
+  c.innerHTML='<label>Sélectionner les banques (max 6)</label>';
+  ALL_SIGLES.forEach(b=>{
+    const div=document.createElement('div');
+    div.className='chk-bank'+(selectedBanks.includes(b)?' checked':'');
+    div.innerHTML=`<input type="checkbox" value="${b}" ${selectedBanks.includes(b)?'checked':''}> ${b}`;
+    div.querySelector('input').addEventListener('change', e=>{
+      if (e.target.checked) {
+        if (selectedBanks.length>=6){ e.target.checked=false; return; }
+        selectedBanks.push(b); div.classList.add('checked');
+      } else { selectedBanks=selectedBanks.filter(x=>x!==b); div.classList.remove('checked'); }
+      renderComparaison();
+    });
+    c.appendChild(div);
+  });
+}
+function renderComparaison() {
+  const metric=document.getElementById('compare-metric').value;
+  const f=gf(); const y=f.annee==='all'?2022:+f.annee;
+  const isMds=['TOTAL_ACTIF','PRODUIT_NET_BANCAIRE','RESULTAT_NET','CAPITAUX_PROPRES','RESSOURCES','EMPLOI'].includes(metric);
+
+  // Evolution chart
+  dc('compare-evol');
+  const datasets=selectedBanks.map((b,i)=>({
+    label:b,
+    data:YEARS.map(yr=>{ const r=DATA.find(d=>d.ANNEE===yr&&d.Sigle===b); return r&&r[metric]!=null?(isMds?+(r[metric]/1000).toFixed(1):r[metric]):null; }),
+    borderColor:PALETTE[i%PALETTE.length], backgroundColor:PALETTE[i%PALETTE.length]+'22',
+    borderWidth:2.5, pointRadius:4, tension:0.3, spanGaps:true, fill:false,
+  }));
+  CH['compare-evol']=makeChart(document.getElementById('ch-compare-evol'),{
+    type:'line', data:{labels:YEARS, datasets},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+
+  // Radar (multi-indicateurs)
+  dc('compare-radar');
+  const radarMetrics=['TOTAL_ACTIF','PRODUIT_NET_BANCAIRE','RESULTAT_NET','CAPITAUX_PROPRES','AGENCE'];
+  const radarLabels=['Total Actif','PNB','Résultat Net','Cap. Propres','Agences'];
+  const normalize=(vals)=>{ const mx=Math.max(...vals.filter(v=>v!==null&&!isNaN(v)),1); return vals.map(v=>v!==null?+(v/mx*100).toFixed(1):0); };
+  const radarDs=selectedBanks.map((b,i)=>{
+    const row=DATA.filter(d=>d.Sigle===b).sort((a,z)=>z.ANNEE-a.ANNEE)[0]||{};
+    return { label:b, data:radarMetrics.map(m=>row[m]||0), borderColor:PALETTE[i%PALETTE.length], backgroundColor:PALETTE[i%PALETTE.length]+'33', borderWidth:2, pointRadius:3 };
+  });
+  // Normalize each axis
+  radarMetrics.forEach((m,mi)=>{
+    const vals=radarDs.map(ds=>ds.data[mi]);
+    const mx=Math.max(...vals,1);
+    radarDs.forEach(ds=>ds.data[mi]=+(ds.data[mi]/mx*100).toFixed(1));
+  });
+  CH['compare-radar']=makeChart(document.getElementById('ch-compare-radar'),{
+    type:'radar', data:{labels:radarLabels, datasets:radarDs},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}}},scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:20},grid:{color:'#dce3ec'},pointLabels:{font:{size:11}}}}}
+  });
+
+  // Bar comparison for selected year
+  dc('compare-bar');
+  const barData=selectedBanks.map(b=>{ const r=DATA.find(d=>d.ANNEE===y&&d.Sigle===b); return r&&r[metric]!=null?(isMds?+(r[metric]/1000).toFixed(1):r[metric]):0; });
+  const metricLabel=document.getElementById('compare-metric').selectedOptions[0].text;
+  CH['compare-bar']=makeChart(document.getElementById('ch-compare-bar'),{
+    type:'bar',
+    data:{labels:selectedBanks, datasets:[{label:`${metricLabel} (${y})`, data:barData, backgroundColor:selectedBanks.map((_,i)=>PALETTE[i%PALETTE.length]+'cc'), borderColor:selectedBanks.map((_,i)=>PALETTE[i%PALETTE.length]), borderWidth:1.5, borderRadius:6}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.parsed.y}${isMds?' Mds FCFA':''}` }}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}
+  });
+}
+
+// ------------------------------------------------------------
+// BANQUE INDIVIDUELLE
+// ------------------------------------------------------------
+function renderBanque() {
+  const f=gf(), container=document.getElementById('bank-detail-content');
+  if (f.banque==='all') { container.innerHTML='<div class="empty">Sélectionnez une banque dans le filtre ci-dessus pour voir son analyse détaillée.</div>'; return; }
+  const bd=DATA.filter(d=>d.Sigle===f.banque).sort((a,b)=>a.ANNEE-b.ANNEE);
+  if (!bd.length) { container.innerHTML='<div class="empty">Aucune donnée.</div>'; return; }
+  const last=bd[bd.length-1], annees=bd.map(d=>d.ANNEE);
+  container.innerHTML=`
+    <div class="bank-header">
+      <div class="bank-name">${f.banque}</div>
+      <div class="bank-meta">${last.Groupe_Bancaire||'Groupe N/A'} · ${bd.length} années (${annees[0]}–${annees[annees.length-1]}) · ${last.NEW_BANK?'Nouvelle banque':''}</div>
+      <div class="bank-kpis">
+        <div class="bkpi"><div class="bkpi-l">Total Actif</div><div class="bkpi-v">${fmds(last.TOTAL_ACTIF)}</div></div>
+        <div class="bkpi"><div class="bkpi-l">PNB</div><div class="bkpi-v">${fmds(last.PRODUIT_NET_BANCAIRE)}</div></div>
+        <div class="bkpi"><div class="bkpi-l">Résultat Net</div><div class="bkpi-v">${fmds(last.RESULTAT_NET)}</div></div>
+        <div class="bkpi"><div class="bkpi-l">ROE</div><div class="bkpi-v">${last._roe!==null?last._roe+'%':'—'}</div></div>
+      </div>
+    </div>
+    <div class="g2 mb">
+      <div class="card"><div class="card-title"><span class="dot"></span>Évolution Total Actif</div><div class="chart-wrap"><canvas id="ch-bk-actif"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="dot green"></span>PNB & Résultat Net</div><div class="chart-wrap"><canvas id="ch-bk-pnb"></canvas></div></div>
+    </div>
+    <div class="g2 mb">
+      <div class="card"><div class="card-title"><span class="dot purple"></span>Ratios ROA & ROE (%)</div><div class="chart-wrap"><canvas id="ch-bk-ratios"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="dot gold"></span>Ressources & Emplois</div><div class="chart-wrap"><canvas id="ch-bk-res"></canvas></div></div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-title"><span class="dot navy"></span>Capitaux Propres</div><div class="chart-wrap"><canvas id="ch-bk-cp"></canvas></div></div>
+      <div class="card"><div class="card-title"><span class="dot"></span>Agences & Effectifs</div><div class="chart-wrap"><canvas id="ch-bk-reseau"></canvas></div></div>
+    </div>`;
+
+  function bkLine(id,datasets,opts={}){
+    dc(id);
+    CH[id]=makeChart(document.getElementById('ch-'+id),{type:'line',
+      data:{labels:annees, datasets},
+      options:{responsive:true,plugins:{legend:{display:datasets.length>1,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}},...(opts.scales||{})}}});
+  }
+  bkLine('bk-actif',[{label:'Total Actif (Mds)',data:bd.map(d=>d.TOTAL_ACTIF?(d.TOTAL_ACTIF/1000).toFixed(1):null),borderColor:'#1a5276',backgroundColor:'rgba(26,82,118,0.08)',borderWidth:2.5,pointRadius:4,tension:0.3,fill:true,spanGaps:true}]);
+  bkLine('bk-pnb',[
+    {label:'PNB (Mds)',data:bd.map(d=>d.PRODUIT_NET_BANCAIRE?(d.PRODUIT_NET_BANCAIRE/1000).toFixed(1):null),borderColor:'#27ae60',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+    {label:'Résultat Net (Mds)',data:bd.map(d=>d.RESULTAT_NET?(d.RESULTAT_NET/1000).toFixed(1):null),borderColor:'#e74c3c',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+  ]);
+  bkLine('bk-ratios',[
+    {label:'ROA (%)',data:bd.map(d=>d._roa),borderColor:'#2980b9',borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,yAxisID:'y'},
+    {label:'ROE (%)',data:bd.map(d=>d._roe),borderColor:'#27ae60',borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,yAxisID:'y1'},
+  ],{scales:{y:{position:'left'},y1:{position:'right',grid:{display:false}}}});
+  bkLine('bk-res',[
+    {label:'Ressources (Mds)',data:bd.map(d=>d.RESSOURCES?(d.RESSOURCES/1000).toFixed(1):null),borderColor:'#0f2b4c',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+    {label:'Emplois (Mds)',data:bd.map(d=>d.EMPLOI?(d.EMPLOI/1000).toFixed(1):null),borderColor:'#d4a017',borderWidth:2,pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+  ]);
+  dc('bk-cp');
+  CH['bk-cp']=makeChart(document.getElementById('ch-bk-cp'),{type:'bar',
+    data:{labels:annees,datasets:[{label:'Cap. Propres (Mds)',data:bd.map(d=>d.CAPITAUX_PROPRES?(d.CAPITAUX_PROPRES/1000).toFixed(1):null),backgroundColor:'rgba(142,68,173,0.7)',borderColor:'#8e44ad',borderWidth:1.5,borderRadius:5}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{grid:{color:'#edf0f2'}}}}});
+  dc('bk-reseau');
+  CH['bk-reseau']=makeChart(document.getElementById('ch-bk-reseau'),{type:'line',
+    data:{labels:annees,datasets:[
+      {label:'Agences',data:bd.map(d=>d.AGENCE??null),borderColor:'#2980b9',borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,yAxisID:'y'},
+      {label:'Effectifs',data:bd.map(d=>d.EFFECTIF??null),borderColor:'#8e44ad',borderWidth:2,pointRadius:4,tension:0.3,spanGaps:true,yAxisID:'y1'},
+    ]},
+    options:{responsive:true,plugins:{legend:{display:true,position:'top',labels:{usePointStyle:true}},tooltip:{mode:'index'}},scales:{x:{grid:{display:false}},y:{position:'left',title:{display:true,text:'Agences'},grid:{color:'#edf0f2'}},y1:{position:'right',title:{display:true,text:'Effectifs'},grid:{display:false}}}}});
+}
+
+// ------------------------------------------------------------
+// CARTE
+// ------------------------------------------------------------
+let mapInited=false;
+let leafMap=null;
+function renderCarte() {
+  const f=gf(), d=fd();
+
+  // Legend
+  const bankAgMap={};
+  d.forEach(r=>{ if(r.AGENCE){ if(!bankAgMap[r.Sigle]||r.ANNEE>bankAgMap[r.Sigle].y) bankAgMap[r.Sigle]={v:r.AGENCE,g:r.Groupe_Bancaire,y:r.ANNEE}; }});
+  const totalAg=Object.values(bankAgMap).reduce((s,v)=>s+v.v,0);
+  const totalBanks=[...new Set(d.map(r=>r.Sigle))].length;
+  document.getElementById('map-legend-content').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:10px;padding:8px 0">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">${totalBanks} banques actives</div>
+      <div style="font-size:13px;color:var(--muted)">${totalAg} agences au total</div>
+      <hr style="border:none;border-top:1px solid var(--border)">
+      ${Object.entries(GC).map(([g,c])=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="width:12px;height:12px;border-radius:50%;background:${c};display:inline-block"></span>${g.replace('Groupes ','')}</div>`).join('')}
+      <hr style="border:none;border-top:1px solid var(--border)">
+      <div style="font-size:11px;color:var(--muted)">Siège social de toutes les banques : <strong>Dakar</strong>. La taille des cercles reflète le nombre d'agences.</div>
+    </div>`;
+
+  // Leaflet map
+  if (!mapInited) {
+    leafMap=L.map('map').setView([14.4974, -14.4524], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:13}).addTo(leafMap);
+    leafMap.on('popupopen', (event) => normalizeTextNodes(event.popup.getElement()));
+    mapInited=true;
+  } else {
+    leafMap.eachLayer(l=>{ if(l instanceof L.CircleMarker||l instanceof L.Marker) leafMap.removeLayer(l); });
+  }
+
+  // City locations with estimated bank presence
+  const cities=[
+    {name:'Dakar (Centre Bancaire)', lat:14.6937, lng:-17.4441, banks:Object.keys(bankAgMap), mainHub:true},
+    {name:'Saint-Louis', lat:16.0179, lng:-16.4896, note:'Présence régionale'},
+    {name:'Thiès', lat:14.7833, lng:-16.9167, note:'Présence régionale'},
+    {name:'Ziguinchor', lat:12.5667, lng:-16.2667, note:'Présence régionale'},
+    {name:'Kaolack', lat:14.1500, lng:-16.0667, note:'Présence régionale'},
+    {name:'Mbour', lat:14.4167, lng:-16.9667, note:'Présence locale'},
+    {name:'Touba', lat:14.8667, lng:-15.8833, note:'Présence locale'},
+  ];
+
+  cities.forEach(city=>{
+    if (city.mainHub) {
+      // Main Dakar circle sized by total agences
+      const r=Math.min(60, Math.max(20, totalAg/5));
+      const circle=L.circleMarker([city.lat, city.lng],{
+        radius:r, fillColor:'#1a5276', color:'#fff', weight:2, fillOpacity:0.85
+      }).addTo(leafMap);
+      const popContent=`<div style="font-family:'Segoe UI',sans-serif;min-width:220px">
+        <div style="font-weight:800;font-size:14px;color:#0f2b4c;margin-bottom:8px">${city.name}</div>
+        <div style="font-size:12px;color:#555;margin-bottom:8px">${totalBanks} banques · ${totalAg} agences</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${Object.keys(bankAgMap).map(b=>`<span style="background:#e8f0fe;color:#1a5276;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600">${b}</span>`).join('')}</div></div>`;
+      circle.bindPopup(popContent,{maxWidth:300});
+      L.marker([city.lat,city.lng]).addTo(leafMap).bindTooltip('Dakar — Centre Financier Sénégalais',{permanent:false});
+    } else {
+      L.circleMarker([city.lat,city.lng],{radius:8,fillColor:'#2980b9',color:'#fff',weight:1.5,fillOpacity:0.7}).addTo(leafMap)
+        .bindPopup(`<div style="font-family:'Segoe UI',sans-serif"><strong>${city.name}</strong><br><small>${city.note}</small></div>`);
+    }
+  });
+
+  // Agences chart
+  const agSorted=Object.entries(bankAgMap).sort((a,b)=>b[1].v-a[1].v).slice(0,TOP_BANK_LIMIT);
+  dc('agences');
+  CH['agences']=makeChart(document.getElementById('ch-agences'),{
+    type:'bar',
+    data:{labels:agSorted.map(([k])=>k), datasets:[{label:'Agences', data:agSorted.map(([,v])=>v.v), backgroundColor:agSorted.map(([,v])=>gc(v.g)+'bb'), borderColor:agSorted.map(([,v])=>gc(v.g)), borderWidth:1.5, borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#edf0f2'}},y:{grid:{display:false}}}}
+  });
+
+  // Effectifs
+  const bankEffMap={};
+  d.forEach(r=>{ if(r.EFFECTIF){ if(!bankEffMap[r.Sigle]||r.ANNEE>bankEffMap[r.Sigle].y) bankEffMap[r.Sigle]={v:r.EFFECTIF,g:r.Groupe_Bancaire,y:r.ANNEE}; }});
+  const effSorted=Object.entries(bankEffMap).sort((a,b)=>b[1].v-a[1].v).slice(0,TOP_BANK_LIMIT);
+  dc('effectif');
+  CH['effectif']=makeChart(document.getElementById('ch-effectif'),{
+    type:'bar',
+    data:{labels:effSorted.map(([k])=>k), datasets:[{label:'Effectifs', data:effSorted.map(([,v])=>v.v), backgroundColor:'rgba(142,68,173,0.75)', borderColor:'#8e44ad', borderWidth:1.5, borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#edf0f2'}},y:{grid:{display:false}}}}
+  });
+
+  // Evolutions
+  const flt=gf();
+  const agEvol=YEARS.map(y=>{ const yr=DATA.filter(r=>r.ANNEE===y&&r.AGENCE&&(flt.groupe==='all'||r.Groupe_Bancaire===flt.groupe)&&(flt.banque==='all'||r.Sigle===flt.banque)); return yr.reduce((s,r)=>s+(r.AGENCE||0),0); });
+  const effEvol=YEARS.map(y=>{ const yr=DATA.filter(r=>r.ANNEE===y&&r.EFFECTIF&&(flt.groupe==='all'||r.Groupe_Bancaire===flt.groupe)&&(flt.banque==='all'||r.Sigle===flt.banque)); return yr.reduce((s,r)=>s+(r.EFFECTIF||0),0); });
+  dc('agences-evol');
+  CH['agences-evol']=makeChart(document.getElementById('ch-agences-evol'),{type:'line',data:{labels:YEARS,datasets:[{label:'Agences',data:agEvol,borderColor:'#2980b9',backgroundColor:'rgba(41,128,185,0.1)',borderWidth:2.5,pointRadius:4,tension:0.3,fill:true}]},options:lineOpts('Agences')});
+  dc('effectif-evol');
+  CH['effectif-evol']=makeChart(document.getElementById('ch-effectif-evol'),{type:'line',data:{labels:YEARS,datasets:[{label:'Effectifs',data:effEvol,borderColor:'#8e44ad',backgroundColor:'rgba(142,68,173,0.1)',borderWidth:2.5,pointRadius:4,tension:0.3,fill:true}]},options:lineOpts('Effectifs')});
+}
+
+// ------------------------------------------------------------
+// DONNEES
+// ------------------------------------------------------------
+function renderDonnees() {
+  const d=fd().sort((a,b)=>b.ANNEE-a.ANNEE||(a.Sigle||'').localeCompare(b.Sigle||''));
+  document.getElementById('data-count').textContent=`${d.length} lignes`;
+  const tbody=document.getElementById('data-tbody'); tbody.innerHTML='';
+  d.forEach(r=>{
+    const rnStyle=(r.RESULTAT_NET||0)<0?'color:#e74c3c':(r.RESULTAT_NET||0)>0?'color:#27ae60':'';
+    tbody.innerHTML+=`<tr>
+      <td>${r.ANNEE}</td><td><strong>${r.Sigle}</strong></td><td>${gbadge(r.Groupe_Bancaire)}</td>
+      <td class="nr">${fmt(r.TOTAL_ACTIF)}</td><td class="nr">${fmt(r.CAPITAUX_PROPRES)}</td>
+      <td class="nr">${fmt(r.PRODUIT_NET_BANCAIRE)}</td>
+      <td class="nr" style="${rnStyle}">${fmt(r.RESULTAT_NET)}</td>
+      <td class="nr">${fmt(r.RESSOURCES)}</td><td class="nr">${fmt(r.EMPLOI)}</td>
+      <td class="nr">${r.EFFECTIF??'—'}</td><td class="nr">${r.AGENCE??'—'}</td>
+      <td class="nr">${r._roa!==null?r._roa+'%':'—'}</td><td class="nr">${r._roe!==null?r._roe+'%':'—'}</td></tr>`;
+  });
+}
+
+// ------------------------------------------------------------
+// TAB SWITCHING
+// ------------------------------------------------------------
+let currentTab='secteur';
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  currentTab=name;
+  renderCurrentTab();
+}
+function renderCurrentTab(){
+  renderKPIs();
+  if (currentTab==='secteur') renderSecteur();
+  else if (currentTab==='bilan') renderBilan();
+  else if (currentTab==='ratios') renderRatios();
+  else if (currentTab==='classement') renderClassement();
+  else if (currentTab==='comparaison') renderComparaison();
+  else if (currentTab==='banque') renderBanque();
+  else if (currentTab==='carte') renderCarte();
+  else if (currentTab==='donnees') renderDonnees();
+  normalizeTextNodes(document.body);
+}
+
+// ------------------------------------------------------------
+// EVENTS & INIT
+// ------------------------------------------------------------
+['f-annee','f-groupe','f-banque'].forEach(id=>{ document.getElementById(id).addEventListener('change',renderCurrentTab); });
+document.getElementById('compare-metric').addEventListener('change',renderComparaison);
+function resetFilters(){ document.getElementById('f-annee').value='all'; document.getElementById('f-groupe').value='all'; document.getElementById('f-banque').value='all'; renderCurrentTab(); }
+
+refreshStaticLabels();
+initBankFilter();
+initCompareCheckboxes();
+renderCurrentTab();
+
+// ── EXPORTS ──────────────────────────────────────────────────
+function exportCSV() {
+  const d = fd().sort((a,b) => b.ANNEE - a.ANNEE || (a.Sigle||'').localeCompare(b.Sigle||''));
+  const cols = [
+    {h:'Annee',        k:'ANNEE'},
+    {h:'Sigle',        k:'Sigle'},
+    {h:'Groupe',       k:'Groupe_Bancaire'},
+    {h:'Total_Actif',  k:'TOTAL_ACTIF'},
+    {h:'Cap_Propres',  k:'CAPITAUX_PROPRES'},
+    {h:'PNB',          k:'PRODUIT_NET_BANCAIRE'},
+    {h:'Resultat_Net', k:'RESULTAT_NET'},
+    {h:'Ressources',   k:'RESSOURCES'},
+    {h:'Emplois',      k:'EMPLOI'},
+    {h:'Effectif',     k:'EFFECTIF'},
+    {h:'Agences',      k:'AGENCE'},
+    {h:'ROA_pct',      k:'_roa'},
+    {h:'ROE_pct',      k:'_roe'},
+    {h:'NIM_pct',      k:'_nim'},
+    {h:'CIR_pct',      k:'_cir'},
+    {h:'Cout_Risque_pct', k:'_cr'},
+  ];
+  const rows = [cols.map(c => c.h).join(';')];
+  d.forEach(r => {
+    rows.push(cols.map(c => {
+      const v = r[c.k];
+      return (v !== null && v !== undefined) ? String(v).replace(/;/g, ',') : '';
+    }).join(';'));
+  });
+  const f = gf();
+  const suf = (f.annee !== 'all' ? '_' + f.annee : '_2015-2022')
+            + (f.groupe !== 'all' ? '_' + f.groupe.replace(/\s+/g,'_') : '')
+            + (f.banque !== 'all' ? '_' + f.banque : '');
+  const blob = new Blob(['\uFEFF' + rows.join('\r\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'secteur_bancaire_senegal' + suf + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportPDF() {
+  if (typeof html2pdf === 'undefined') { window.print(); return; }
+  const f = gf();
+  const suf = f.annee !== 'all' ? f.annee : '2015-2022';
+  const kpiEl = document.getElementById('kpi-grid');
+  const tabEl = document.getElementById('tab-' + currentTab);
+  if (!tabEl) { window.print(); return; }
+
+  // Capture canvases to images before cloning (canvas.cloneNode loses content)
+  const snapshots = new Map();
+  tabEl.querySelectorAll('canvas').forEach(c => {
+    try { snapshots.set(c.id, c.toDataURL('image/png')); } catch(e) {}
+  });
+
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'background:#fff;padding:20px;font-family:Segoe UI,system-ui,sans-serif;max-width:1100px;color:#1c2833';
+  wrap.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:10px;border-bottom:3px solid #d4a017">
+    <div>
+      <div style="font-size:17px;font-weight:700;color:#0f2b4c">Secteur Bancaire S\u00e9n\u00e9galais</div>
+      <div style="font-size:11px;color:#7f8c8d;margin-top:2px">Tableau de bord analytique \u00b7 ${suf} \u00b7 M2 Big Data ISM</div>
+    </div>
+    <div style="font-size:11px;color:#7f8c8d">Export\u00e9 le ${new Date().toLocaleDateString('fr-FR')}</div>
+  </div>`;
+
+  if (kpiEl) wrap.appendChild(kpiEl.cloneNode(true));
+
+  const tabClone = tabEl.cloneNode(true);
+  tabClone.style.display = 'block';
+  // Replace cloned (empty) canvases with captured images
+  tabClone.querySelectorAll('canvas').forEach(c => {
+    const src = snapshots.get(c.id);
+    if (src) {
+      const img = document.createElement('img');
+      img.src = src;
+      img.style.cssText = 'width:100%;height:auto;display:block;border-radius:6px';
+      c.parentNode.replaceChild(img, c);
+    }
+  });
+  // Remove no-print elements in clone
+  tabClone.querySelectorAll('.no-print').forEach(el => el.remove());
+  wrap.appendChild(tabClone);
+
+  document.body.appendChild(wrap);
+  html2pdf().set({
+    margin: [8, 6, 8, 6],
+    filename: 'banking_senegal_' + currentTab + '_' + suf + '.pdf',
+    image: { type: 'jpeg', quality: 0.93 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+  }).from(wrap).save().then(() => document.body.removeChild(wrap));
+}
+
+function exportXLSX() {
+  if (typeof XLSX === 'undefined') { alert('SheetJS non disponible'); return; }
+  const cols = [
+    {h:'Annee',        k:'ANNEE'},
+    {h:'Sigle',        k:'Sigle'},
+    {h:'Groupe',       k:'Groupe_Bancaire'},
+    {h:'Total_Actif',  k:'TOTAL_ACTIF'},
+    {h:'Cap_Propres',  k:'CAPITAUX_PROPRES'},
+    {h:'PNB',          k:'PRODUIT_NET_BANCAIRE'},
+    {h:'Resultat_Net', k:'RESULTAT_NET'},
+    {h:'Ressources',   k:'RESSOURCES'},
+    {h:'Emplois',      k:'EMPLOI'},
+    {h:'Effectif',     k:'EFFECTIF'},
+    {h:'Agences',      k:'AGENCE'},
+    {h:'ROA_pct',      k:'_roa'},
+    {h:'ROE_pct',      k:'_roe'},
+    {h:'NIM_pct',      k:'_nim'},
+    {h:'CIR_pct',      k:'_cir'},
+    {h:'Cout_Risque_pct', k:'_cr'},
+  ];
+  const d = fd().sort((a,b) => b.ANNEE - a.ANNEE || (a.Sigle||'').localeCompare(b.Sigle||''));
+  const rows = [cols.map(c => c.h)];
+  d.forEach(r => rows.push(cols.map(c => {
+    const v = r[c.k];
+    return (v !== null && v !== undefined) ? v : '';
+  })));
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  // Column widths
+  ws['!cols'] = cols.map((c,i) => ({wch: i < 3 ? 18 : 14}));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Données bancaires');
+  const f = gf();
+  const suf = (f.annee !== 'all' ? '_' + f.annee : '_2015-2022')
+            + (f.groupe !== 'all' ? '_' + f.groupe.replace(/\s+/g,'_') : '')
+            + (f.banque !== 'all' ? '_' + f.banque : '');
+  XLSX.writeFile(wb, 'secteur_bancaire_senegal' + suf + '.xlsx');
+}
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+

@@ -5,17 +5,17 @@ Cette documentation resume la phase 1 du projet Data Visualization construit ave
 L'objectif est de nettoyer, normaliser, enrichir puis ingerer les donnees dans MongoDB Atlas.
 
 ## Sources de donnees
-- Banking: `project_dataviz/data_bank/BASE_SENEGAL2.xlsx`
-- BCEAO PDF: `project_dataviz/data_bank/bilans_bceao.pdf`
-- Solar: `project_dataviz/solar_data/solar_dataset.csv`
-- Insurance: `project_dataviz/insurance_data/insurance_dataset.csv`
+- Banking: `preprocessing/data_bank/BASE_SENEGAL2.xlsx`
+- BCEAO PDF: `preprocessing/data_bank/bilans_bceao.pdf`
+- Solar: `preprocessing/solar_data/solar_dataset.csv`
+- Insurance: `preprocessing/insurance_data/insurance_dataset.csv`
 
 ## Structure implemente
-- `project_dataviz/scripts/preprocessing_bank.py`
-- `project_dataviz/scripts/preprocessing_solar.py`
-- `project_dataviz/scripts/preprocessing_insurance.py`
-- `project_dataviz/database/mongo_connection.py`
-- `project_dataviz/scripts/ingest_data.py`
+- `preprocessing/scripts/preprocessing_bank.py`
+- `preprocessing/scripts/preprocessing_solar.py`
+- `preprocessing/scripts/preprocessing_insurance.py`
+- `preprocessing/database/mongo_connection.py`
+- `preprocessing/scripts/ingest_data.py`
 
 ## Pipeline bancaire
 Le preprocessing bancaire combine deux sources:
@@ -110,13 +110,13 @@ Collections:
 Commande principale:
 
 ```bash
-python .\project_dataviz\scripts\ingest_data.py --log-level INFO
+python .\preprocessing\scripts\ingest_data.py --log-level INFO
 ```
 
 Execution sans insertion MongoDB:
 
 ```bash
-python .\project_dataviz\scripts\ingest_data.py --skip-mongo --log-level INFO
+python .\preprocessing\scripts\ingest_data.py --skip-mongo --log-level INFO
 ```
 
 ## Resultat de la phase 1

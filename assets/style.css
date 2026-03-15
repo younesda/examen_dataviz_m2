@@ -335,3 +335,2096 @@ body {
         white-space: nowrap;
     }
 }
+
+/* --- Premium banking dashboard ------------------------------------------ */
+
+.banking-premium-page {
+    gap: 1.35rem;
+}
+
+.banking-hero-card,
+.banking-filter-card,
+.banking-kpi-card,
+.banking-panel-card,
+.banking-table-card,
+.banking-tabs-shell,
+.banking-mini-kpi-card {
+    border-radius: 24px;
+    border: 1px solid rgba(212, 175, 55, 0.16);
+    background:
+        radial-gradient(circle at top right, rgba(212, 175, 55, 0.10), transparent 24%),
+        linear-gradient(180deg, rgba(16, 32, 58, 0.97), rgba(7, 17, 31, 0.97));
+    box-shadow: 0 22px 56px rgba(3, 8, 19, 0.42);
+    overflow: hidden;
+}
+
+.banking-hero-card .card-body,
+.banking-filter-card .card-body,
+.banking-kpi-card .card-body,
+.banking-panel-card .card-body,
+.banking-table-card .card-body,
+.banking-tabs-shell .card-body,
+.banking-mini-kpi-card .card-body {
+    background: transparent;
+    color: #f6f0e6;
+}
+
+.banking-hero-kicker {
+    display: inline-block;
+    font-size: 0.78rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #f3cf75;
+    margin-bottom: 0.8rem;
+}
+
+.banking-hero-title {
+    margin: 0;
+    font-family: "Aptos Display", "Bahnschrift", sans-serif;
+    font-size: clamp(2.1rem, 4vw, 3.6rem);
+}
+
+.banking-hero-period {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #d4af37;
+    margin-top: 0.5rem;
+}
+
+.banking-hero-subtitle {
+    margin: 1rem 0 0;
+    color: #b1bdd0;
+    line-height: 1.7;
+    max-width: 780px;
+}
+
+.banking-hero-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.banking-hero-badges {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.banking-hero-badge {
+    padding: 0.68rem 1rem;
+    border-radius: 999px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.banking-hero-badge-gold {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.22), rgba(243, 207, 117, 0.30));
+    color: #fde7a0;
+    border: 1px solid rgba(243, 207, 117, 0.36);
+}
+
+.banking-hero-badge-dark {
+    background: rgba(7, 17, 31, 0.82);
+    color: #dce5f3;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.banking-export-button.btn {
+    padding: 0.85rem 1.25rem;
+    border-radius: 16px;
+    font-weight: 700;
+    border: 1px solid rgba(243, 207, 117, 0.28);
+    box-shadow: 0 16px 30px rgba(3, 8, 19, 0.28);
+}
+
+.banking-status-alert.alert {
+    margin-top: 1.35rem;
+    border-radius: 18px;
+    border-color: rgba(243, 207, 117, 0.18);
+    background: rgba(8, 18, 33, 0.62);
+    color: #f6f0e6;
+}
+
+.banking-filter-label,
+.banking-kpi-label,
+.banking-mini-kpi-label,
+.banking-panel-subtitle,
+.banking-subsection-text,
+.banking-compare-helper {
+    color: #aeb9ca;
+}
+
+.banking-filter-label {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-bottom: 0.75rem;
+    color: #f3cf75;
+}
+
+.banking-kpi-card .card-body {
+    padding: 1.25rem;
+}
+
+.banking-kpi-label {
+    font-size: 0.88rem;
+    margin-bottom: 0.75rem;
+}
+
+.banking-kpi-value {
+    margin: 0;
+    font-family: "Aptos Display", "Bahnschrift", sans-serif;
+    font-size: clamp(1.55rem, 2.8vw, 2.05rem);
+}
+
+.banking-kpi-helper {
+    margin: 0.75rem 0 0;
+    color: #98a6be;
+    line-height: 1.55;
+    font-size: 0.86rem;
+}
+
+.banking-mini-kpi-card .card-body {
+    padding: 1rem 1rem 0.95rem;
+}
+
+.banking-mini-kpi-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+}
+
+.banking-mini-kpi-value {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #f6f0e6;
+}
+
+.banking-panel-card .card-body,
+.banking-table-card .card-body,
+.banking-tabs-shell .card-body {
+    padding: 1.25rem;
+}
+
+.banking-panel-title,
+.banking-subsection-title {
+    font-family: "Aptos Display", "Bahnschrift", sans-serif;
+    font-size: 1.12rem;
+    margin-bottom: 0.2rem;
+}
+
+.banking-panel-subtitle,
+.banking-subsection-text {
+    margin-bottom: 0.85rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.banking-graph {
+    min-height: 360px;
+}
+
+.banking-tabs {
+    margin-top: 0.2rem;
+}
+
+.banking-tabs .nav-tabs {
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    gap: 0.55rem;
+}
+
+.banking-tabs .nav-link {
+    border: 1px solid rgba(148, 163, 184, 0.10);
+    border-radius: 16px;
+    color: #aeb9ca;
+    background: rgba(7, 17, 31, 0.72);
+    font-weight: 700;
+    padding: 0.78rem 1rem;
+}
+
+.banking-tabs .nav-link:hover,
+.banking-tabs .nav-link:focus {
+    color: #f6f0e6;
+    border-color: rgba(243, 207, 117, 0.22);
+}
+
+.banking-tabs .nav-link.active {
+    color: #fef6df;
+    background: linear-gradient(180deg, rgba(212, 175, 55, 0.22), rgba(243, 207, 117, 0.10));
+    border-color: rgba(243, 207, 117, 0.34);
+}
+
+.banking-tabs .tab-content {
+    padding-top: 1rem;
+}
+
+.banking-tab-row + .banking-tab-row {
+    margin-top: 0.1rem;
+}
+
+.banking-dropdown .Select-control,
+.banking-dropdown .Select-menu-outer,
+.banking-dropdown .Select-menu,
+.banking-dropdown .Select-placeholder,
+.banking-dropdown .Select-value-label,
+.banking-dropdown .Select-input > input,
+.banking-dropdown .Select-multi-value-wrapper,
+.banking-dropdown .VirtualizedSelectOption {
+    background: transparent !important;
+    color: #f6f0e6 !important;
+}
+
+.banking-dropdown .Select-control {
+    border-radius: 16px !important;
+    border: 1px solid rgba(243, 207, 117, 0.16) !important;
+    box-shadow: none !important;
+    min-height: 46px;
+}
+
+.banking-dropdown .Select-menu-outer {
+    border: 1px solid rgba(243, 207, 117, 0.14) !important;
+    background: #10203a !important;
+}
+
+.banking-dropdown .VirtualizedSelectFocusedOption {
+    background: rgba(212, 175, 55, 0.18) !important;
+}
+
+.banking-dropdown .Select--multi .Select-value {
+    background: rgba(212, 175, 55, 0.18) !important;
+    border-color: rgba(243, 207, 117, 0.22) !important;
+    color: #f6f0e6 !important;
+}
+
+.banking-compare-card {
+    margin-bottom: 1rem;
+}
+
+.banking-table-card .dash-table-container {
+    background: transparent;
+}
+
+.banking-table-card .dash-spreadsheet-container,
+.banking-table-card .dash-spreadsheet-inner {
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.banking-table-card input,
+.banking-table-card .dash-filter input {
+    background: #0b1526 !important;
+    color: #f6f0e6 !important;
+    border: 1px solid rgba(243, 207, 117, 0.14) !important;
+}
+
+@media (max-width: 991.98px) {
+    .banking-hero-actions {
+        align-items: flex-start;
+    }
+
+    .banking-hero-badges {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .banking-tabs .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 0.35rem;
+    }
+
+    .banking-tabs .nav-link {
+        white-space: nowrap;
+    }
+}
+
+/* --- HTML-reference banking dashboard -------------------------------- */
+
+.banking-html-shell {
+    --navy: #0f2b4c;
+    --blue: #1a5276;
+    --mid: #2980b9;
+    --gold: #d4a017;
+    --bg: #f0f4f8;
+    --card: #fff;
+    --text: #1c2833;
+    --muted: #7f8c8d;
+    --border: #dce3ec;
+    --green: #27ae60;
+    --red: #e74c3c;
+    --purple: #8e44ad;
+    --radius: 10px;
+    --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 14px;
+}
+
+.banking-html-shell,
+.banking-html-shell * {
+    box-sizing: border-box;
+}
+
+@media print {
+    .banking-html-shell header,
+    .banking-html-shell .filters-bar,
+    .banking-html-shell .tabs,
+    .banking-html-shell .no-print {
+        display: none !important;
+    }
+
+    .banking-html-shell .tab-content,
+    .banking-html-shell .tab-pane,
+    .banking-html-shell .tab-pane.fade,
+    .banking-html-shell .tab-pane.active {
+        display: block !important;
+        opacity: 1 !important;
+        page-break-after: always;
+    }
+
+    .banking-html-shell .card {
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    .banking-html-shell {
+        background: #fff;
+    }
+}
+
+.banking-html-shell header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 100%);
+    color: #fff;
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.25);
+}
+
+.banking-html-shell .header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.banking-html-shell .header-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--navy);
+}
+
+.banking-html-shell .header-title {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.banking-html-shell .header-sub {
+    font-size: 11px;
+    opacity: .65;
+    margin-top: 1px;
+}
+
+.banking-html-shell .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.banking-html-shell .header-badge {
+    background: rgba(255, 255, 255, .15);
+    border: 1px solid rgba(255, 255, 255, .25);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 12px;
+}
+
+.banking-html-shell .btn-pdf.btn,
+.banking-html-shell .btn-pdf.btn:hover,
+.banking-html-shell .btn-pdf.btn:focus {
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 7px;
+    padding: 7px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: .2s;
+    box-shadow: none;
+    text-decoration: none;
+}
+
+.banking-html-shell .btn-pdf.btn:hover {
+    background: #e8b520;
+}
+
+.banking-html-shell .filters-bar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 64px;
+    z-index: 100;
+}
+
+.banking-html-shell .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.banking-html-shell .filter-group label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    white-space: nowrap;
+    margin: 0;
+}
+
+.banking-html-shell .filter-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+}
+
+.banking-html-shell .main {
+    padding: 22px 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.banking-html-shell .tabs .nav-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.banking-html-shell .tabs .nav-link,
+.banking-html-shell .tab {
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    color: var(--muted);
+    transition: .15s;
+    border: 2px solid transparent;
+    border-bottom: none;
+    margin-bottom: -2px;
+    white-space: nowrap;
+    background: transparent;
+}
+
+.banking-html-shell .tabs .nav-link:hover,
+.banking-html-shell .tab:hover {
+    color: var(--mid);
+    background: #eaf3fb;
+}
+
+.banking-html-shell .tabs .nav-link.active,
+.banking-html-shell .tab.active {
+    color: var(--navy);
+    background: var(--card);
+    border-color: var(--border);
+    border-bottom-color: var(--card);
+}
+
+.banking-html-shell .tabs .tab-content {
+    padding-top: 0;
+}
+
+.banking-html-shell .g-4 {
+    --bs-gutter-x: 18px;
+    --bs-gutter-y: 18px;
+}
+
+.banking-html-shell .mb {
+    margin-bottom: 18px;
+}
+
+.banking-html-shell .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.banking-html-shell .kpi-card {
+    --accent: var(--mid);
+    --glow: rgba(41, 128, 185, .14);
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: .22s;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+.banking-html-shell .kpi-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: var(--accent);
+    pointer-events: none;
+}
+
+.banking-html-shell .kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 28px rgba(15, 43, 76, .14);
+}
+
+.banking-html-shell .kpi-card.gold { --accent: var(--gold); --glow: rgba(212, 160, 23, .18); background: linear-gradient(180deg, #fffdf7 0%, #fff8e8 100%); }
+.banking-html-shell .kpi-card.green { --accent: var(--green); --glow: rgba(39, 174, 96, .18); background: linear-gradient(180deg, #f8fdf9 0%, #eefaf3 100%); }
+.banking-html-shell .kpi-card.red { --accent: var(--red); --glow: rgba(231, 76, 60, .18); background: linear-gradient(180deg, #fff9f9 0%, #fff0f0 100%); }
+.banking-html-shell .kpi-card.navy { --accent: var(--navy); --glow: rgba(15, 43, 76, .18); background: linear-gradient(180deg, #f7faff 0%, #edf4fb 100%); }
+.banking-html-shell .kpi-card.purple { --accent: var(--purple); --glow: rgba(142, 68, 173, .18); background: linear-gradient(180deg, #fcf9ff 0%, #f5effb 100%); }
+
+.banking-html-shell .kpi-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+
+.banking-html-shell .kpi-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--navy);
+    line-height: 1;
+}
+
+.banking-html-shell .kpi-sub {
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.banking-html-shell .kpi-trend {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.banking-html-shell #kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.banking-html-shell #kpi-grid .kpi-card {
+    min-height: 178px;
+    padding: 20px 22px 18px;
+    border-color: rgba(15, 43, 76, .08);
+    box-shadow: 0 18px 36px rgba(15, 43, 76, .12);
+}
+
+.banking-html-shell #kpi-grid .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: -78px;
+    right: -58px;
+    width: 190px;
+    height: 190px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow) 0%, rgba(255, 255, 255, 0) 70%);
+    pointer-events: none;
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured {
+    grid-column: span 2;
+    --accent: var(--gold);
+    --glow: rgba(212, 160, 23, .26);
+    background: linear-gradient(135deg, #0f2b4c 0%, #16476d 62%, #1d638e 100%);
+    border-color: rgba(255, 255, 255, .08);
+    box-shadow: 0 22px 42px rgba(15, 43, 76, .24);
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured::after {
+    top: auto;
+    bottom: -84px;
+    right: -16px;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(212, 160, 23, .36) 0%, rgba(255, 255, 255, 0) 72%);
+}
+
+.banking-html-shell #kpi-grid .kpi-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.banking-html-shell #kpi-grid .kpi-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.banking-html-shell #kpi-grid .kpi-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(15, 43, 76, .06);
+    border: 1px solid rgba(15, 43, 76, .08);
+    color: var(--navy);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.banking-html-shell #kpi-grid .kpi-value-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.banking-html-shell #kpi-grid .kpi-value {
+    font-size: 34px;
+    letter-spacing: -.04em;
+    line-height: .92;
+}
+
+.banking-html-shell #kpi-grid .kpi-sub {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.banking-html-shell #kpi-grid .kpi-meta {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(15, 43, 76, .08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.banking-html-shell #kpi-grid .kpi-context {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.banking-html-shell #kpi-grid .kpi-trend {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 9px 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 43, 76, .08);
+    background: rgba(15, 43, 76, .05);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.05;
+    white-space: nowrap;
+    min-width: 104px;
+}
+
+.banking-html-shell #kpi-grid .kpi-trend strong {
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.banking-html-shell #kpi-grid .kpi-trend small {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .72;
+}
+
+.banking-html-shell #kpi-grid .kpi-trend.neutral {
+    color: var(--navy);
+    background: rgba(15, 43, 76, .06);
+    border-color: rgba(15, 43, 76, .1);
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-label,
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-sub,
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-context {
+    color: rgba(255, 255, 255, .78);
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-value {
+    color: #fff;
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-chip {
+    background: rgba(255, 255, 255, .12);
+    border-color: rgba(255, 255, 255, .16);
+    color: #fff;
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-meta {
+    border-top-color: rgba(255, 255, 255, .14);
+}
+
+.banking-html-shell #kpi-grid .kpi-card.featured .kpi-trend.neutral {
+    background: rgba(255, 255, 255, .12);
+    border-color: rgba(255, 255, 255, .12);
+    color: #fff;
+}
+
+.banking-html-shell .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px 22px;
+    border: 1px solid var(--border);
+}
+
+.banking-html-shell .card-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.banking-html-shell .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--mid);
+    flex-shrink: 0;
+}
+
+.banking-html-shell .dot.gold { background: var(--gold); }
+.banking-html-shell .dot.green { background: var(--green); }
+.banking-html-shell .dot.red { background: var(--red); }
+.banking-html-shell .dot.purple { background: var(--purple); }
+.banking-html-shell .dot.navy { background: var(--navy); }
+
+.banking-html-shell .chart-wrap {
+    position: relative;
+}
+
+.banking-html-shell .graph-container {
+    position: relative;
+    height: 320px;
+    min-height: 320px;
+    overflow: hidden;
+}
+
+.banking-html-shell .dash-graph,
+.banking-html-shell .banking-plot {
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.banking-html-shell .dash-graph > div:first-child {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+.banking-html-shell .graph-container .js-plotly-plot {
+    position: absolute !important;
+    inset: 0 !important;
+}
+
+.banking-html-shell .graph-container .dash-graph > div,
+.banking-html-shell .graph-container .js-plotly-plot,
+.banking-html-shell .graph-container .plot-container,
+.banking-html-shell .graph-container .svg-container {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.banking-html-shell .ratio-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.banking-html-shell .ratio-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.banking-html-shell .ratio-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 8px;
+}
+
+.banking-html-shell .ratio-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--navy);
+}
+
+.banking-html-shell .ratio-desc {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+}
+
+.banking-html-shell .bank-header {
+    background: linear-gradient(135deg, var(--navy), var(--blue));
+    border-radius: var(--radius);
+    color: #fff;
+    padding: 22px 26px;
+    margin-bottom: 18px;
+}
+
+.banking-html-shell .bank-name {
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.banking-html-shell .bank-meta {
+    opacity: .7;
+    font-size: 12px;
+    margin-top: 3px;
+}
+
+.banking-html-shell .bank-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.banking-html-shell .bkpi {
+    background: rgba(255, 255, 255, .12);
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.banking-html-shell .bkpi-l {
+    font-size: 10px;
+    opacity: .7;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.banking-html-shell .bkpi-v {
+    font-size: 18px;
+    font-weight: 800;
+    margin-top: 2px;
+}
+
+.banking-html-shell .compare-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.banking-html-shell .compare-select label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    width: 100%;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.banking-html-shell .bilan-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.banking-html-shell .bilan-leg-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+
+.banking-html-shell .bilan-leg-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.banking-html-shell .banking-select .Select-control,
+.banking-html-shell .banking-select .Select-menu-outer,
+.banking-html-shell .banking-select .Select-menu,
+.banking-html-shell .banking-select .Select-placeholder,
+.banking-html-shell .banking-select .Select-value-label,
+.banking-html-shell .banking-select .Select-input > input,
+.banking-html-shell .banking-select .Select-multi-value-wrapper {
+    background: transparent !important;
+    color: var(--text) !important;
+}
+
+.banking-html-shell .banking-select .Select-control {
+    border: 1.5px solid var(--border) !important;
+    border-radius: 7px !important;
+    padding: 2px 6px;
+    min-height: 38px;
+    box-shadow: none !important;
+    background: #f8fafc !important;
+}
+
+.banking-html-shell .banking-select .Select-menu-outer {
+    border: 1px solid var(--border) !important;
+    background: var(--card) !important;
+    box-shadow: var(--shadow);
+}
+
+.banking-html-shell .banking-select .VirtualizedSelectFocusedOption {
+    background: #eaf3fb !important;
+    color: var(--navy) !important;
+}
+
+.banking-html-shell .banking-select .Select--multi .Select-value {
+    background: #eaf3fb !important;
+    border: 1px solid var(--border) !important;
+    color: var(--navy) !important;
+    border-radius: 12px;
+}
+
+.banking-html-shell .dash-table-container {
+    background: transparent;
+}
+
+.banking-html-shell footer {
+    text-align: center;
+    padding: 18px;
+    font-size: 11px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 28px;
+}
+
+@media(max-width:900px){
+  .banking-html-shell .main{padding:14px}
+  .banking-html-shell .filters-bar{padding:10px 14px;top:64px}
+  .banking-html-shell header{padding:0 14px}
+  .banking-html-shell .bank-kpis{grid-template-columns:repeat(2,1fr)}
+  .banking-html-shell .ratio-grid{grid-template-columns:repeat(2,1fr)}
+  .banking-html-shell #kpi-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .banking-html-shell #kpi-grid .kpi-card.featured{grid-column:span 1}
+  .banking-html-shell #kpi-grid .kpi-value-row{align-items:flex-start;flex-direction:column}
+  .banking-html-shell #kpi-grid .kpi-value{font-size:28px}
+}
+
+/* --- Banking graph hardening -------------------------------------------- */
+
+.banking-html-shell .tab-content,
+.banking-html-shell .tab-pane,
+.banking-html-shell .row,
+.banking-html-shell .row > *,
+.banking-html-shell [class*="col-"] {
+    min-width: 0;
+}
+
+.banking-html-shell .tab-pane {
+    width: 100%;
+}
+
+.banking-html-shell .card {
+    overflow: hidden;
+}
+
+.banking-html-shell .card.card-graph {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 251, 255, 0.98) 100%);
+    border: 1px solid rgba(15, 43, 76, 0.08);
+    box-shadow: 0 18px 36px rgba(15, 43, 76, 0.10);
+}
+
+.banking-html-shell .card.card-graph:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 44px rgba(15, 43, 76, 0.14);
+}
+
+.banking-html-shell .card.card-graph .card-title {
+    margin-bottom: 12px;
+}
+
+.banking-html-shell .graph-container {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-radius: 14px;
+    border: 1px solid rgba(15, 43, 76, 0.05);
+}
+
+.banking-html-shell .dash-graph,
+.banking-html-shell .banking-plot,
+.banking-html-shell .graph-container .dash-graph,
+.banking-html-shell .graph-container .dash-graph > div,
+.banking-html-shell .graph-container .js-plotly-plot,
+.banking-html-shell .graph-container .plot-container,
+.banking-html-shell .graph-container .svg-container {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.banking-html-shell .graph-container .modebar {
+    right: 8px !important;
+}
+
+.banking-html-shell .bkpi,
+.banking-html-shell .ratio-card {
+    border: 1px solid rgba(15, 43, 76, 0.06);
+}
+
+/* --- kpi-trend up / down colors (dynamic pills) -------------------------- */
+.banking-html-shell #kpi-grid .kpi-trend.up {
+    color: var(--green);
+    background: rgba(39, 174, 96, .12);
+    border-color: rgba(39, 174, 96, .18);
+}
+
+.banking-html-shell #kpi-grid .kpi-trend.down {
+    color: var(--red);
+    background: rgba(231, 76, 60, .12);
+    border-color: rgba(231, 76, 60, .18);
+}
+
+/* --- ratio progress bar -------------------------------------------------- */
+.banking-html-shell .ratio-bar-bg {
+    background: #edf0f5;
+    border-radius: 4px;
+    height: 6px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.banking-html-shell .ratio-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width .5s ease;
+}
+
+/* --- filters reset button ------------------------------------------------ */
+.banking-html-shell .btn-reset {
+    margin-left: auto;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s;
+    white-space: nowrap;
+}
+
+.banking-html-shell .btn-reset:hover,
+.banking-html-shell .btn-reset:focus {
+    background: var(--blue);
+    outline: none;
+    color: #fff;
+}
+
+/* --- group/ranking badge styles ------------------------------------------ */
+.banking-html-shell .badge-group {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.banking-html-shell .badge-local    { background: #eaf7ea; color: #1e8449; }
+.banking-html-shell .badge-regional { background: #ebf5fb; color: #1a5276; }
+.banking-html-shell .badge-contin   { background: #fef9e7; color: #9a7d0a; }
+.banking-html-shell .badge-intl     { background: #fdf2f8; color: #76448a; }
+.banking-html-shell .badge-na       { background: #f2f3f4; color: #7f8c8d; }
+
+/* --- empty state --------------------------------------------------------- */
+.banking-html-shell .empty {
+    text-align: center;
+    padding: 48px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* --- section header ------------------------------------------------------ */
+.banking-html-shell .section-hdr {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+/* --- bank-kpis: 4 columns on desktop, 2 on mobile ----------------------- */
+@media (min-width: 900px) {
+    .banking-html-shell .bank-kpis {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+/* --- ratio-value accent colors ------------------------------------------ */
+.banking-html-shell .ratio-value.color-blue   { color: var(--mid); }
+.banking-html-shell .ratio-value.color-green  { color: var(--green); }
+.banking-html-shell .ratio-value.color-gold   { color: var(--gold); }
+.banking-html-shell .ratio-value.color-red    { color: var(--red); }
+.banking-html-shell .ratio-value.color-purple { color: var(--purple); }
+
+
+/* --- solar observatory -------------------------------------------------- */
+
+.solar-page {
+    gap: 1.35rem;
+}
+
+.solar-hero-card,
+.solar-rail-card,
+.solar-panel-card,
+.solar-table-card,
+.solar-control-card,
+.solar-signal-card,
+.solar-stack-card {
+    border: 1px solid rgba(245, 158, 11, 0.14);
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at top right, rgba(245, 158, 11, 0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.12), transparent 34%),
+        linear-gradient(160deg, rgba(7, 19, 28, 0.98), rgba(11, 36, 39, 0.96));
+    box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
+    overflow: hidden;
+}
+
+.solar-hero-card .card-body,
+.solar-panel-card .card-body,
+.solar-table-card .card-body,
+.solar-control-card .card-body {
+    background: transparent;
+    color: #f8fafc;
+}
+
+.solar-hero-card .card-body {
+    padding: 2rem;
+}
+
+.solar-hero-kicker,
+.solar-card-eyebrow,
+.solar-filter-label,
+.solar-rail-label,
+.solar-stack-label,
+.solar-signal-label {
+    display: inline-block;
+    color: #fcd34d;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.76rem;
+}
+
+.solar-hero-title,
+.solar-card-title {
+    font-family: "Aptos Display", "Bahnschrift", sans-serif;
+    color: #f8fafc;
+}
+
+.solar-hero-title {
+    margin: 0.55rem 0 0;
+    font-size: clamp(2.2rem, 4vw, 3.9rem);
+    line-height: 1;
+}
+
+.solar-hero-period,
+.solar-rail-value,
+.solar-signal-value,
+.solar-stack-value {
+    color: #f8fafc;
+    font-weight: 700;
+}
+
+.solar-hero-period {
+    margin-top: 0.85rem;
+    font-size: 1rem;
+}
+
+.solar-hero-copy,
+.solar-rail-copy,
+.solar-control-copy,
+.solar-filter-helper,
+.solar-signal-helper,
+.solar-stack-helper {
+    color: #bfd4df;
+    line-height: 1.65;
+}
+
+.solar-hero-copy {
+    max-width: 780px;
+    margin: 1rem 0 0;
+}
+
+.solar-hero-badges,
+.solar-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    margin-top: 1.15rem;
+}
+
+.solar-hero-badge,
+.solar-badge {
+    padding: 0.7rem 1rem;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.18);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    color: #fde68a;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.solar-hero-badge-soft {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.22);
+    color: #dbeafe;
+}
+
+.solar-hero-badge-outline {
+    background: rgba(8, 18, 28, 0.62);
+    border-color: rgba(148, 163, 184, 0.16);
+    color: #dbe7ef;
+}
+
+.solar-rail-card {
+    padding: 1.4rem;
+    height: 100%;
+}
+
+.solar-rail-card-alt {
+    border-color: rgba(56, 189, 248, 0.16);
+}
+
+.solar-rail-value {
+    margin-top: 0.65rem;
+    font-size: 1.15rem;
+}
+
+.solar-rail-copy {
+    margin: 0.7rem 0 0;
+    font-size: 0.93rem;
+}
+
+.solar-signal-grid {
+    margin-top: 0.1rem;
+}
+
+.solar-signal-card {
+    height: 100%;
+    padding: 1.15rem 1.2rem;
+}
+
+.solar-signal-card-gold {
+    border-color: rgba(245, 158, 11, 0.24);
+}
+
+.solar-signal-card-sky {
+    border-color: rgba(56, 189, 248, 0.24);
+}
+
+.solar-signal-card-teal {
+    border-color: rgba(20, 184, 166, 0.24);
+}
+
+.solar-signal-card-soft {
+    border-color: rgba(191, 219, 254, 0.18);
+}
+
+.solar-signal-value {
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    margin-top: 0.7rem;
+}
+
+.solar-signal-helper {
+    margin-top: 0.65rem;
+    font-size: 0.9rem;
+}
+
+.solar-control-card .card-body,
+.solar-panel-card .card-body,
+.solar-table-card .card-body {
+    padding: 1.35rem;
+}
+
+.solar-card-title {
+    margin: 0.35rem 0 0.95rem;
+    font-size: 1.18rem;
+}
+
+.solar-control-copy {
+    margin: 0 0 1rem;
+    font-size: 0.94rem;
+}
+
+.solar-filter-block + .solar-filter-block {
+    margin-top: 1rem;
+}
+
+.solar-filter-helper {
+    margin: 0.3rem 0 0.65rem;
+    font-size: 0.88rem;
+}
+
+.solar-stack-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+}
+
+.solar-stack-card {
+    padding: 1rem;
+}
+
+.solar-stack-value {
+    margin-top: 0.45rem;
+    font-size: 1.25rem;
+}
+
+.solar-stack-helper {
+    margin-top: 0.45rem;
+    font-size: 0.86rem;
+}
+
+.solar-dropdown .Select-control,
+.solar-dropdown .Select-menu-outer,
+.solar-dropdown .Select-menu,
+.solar-dropdown .Select-placeholder,
+.solar-dropdown .Select-value-label,
+.solar-dropdown .Select-input > input,
+.solar-dropdown .Select-multi-value-wrapper,
+.solar-dropdown .VirtualizedSelectOption {
+    background: transparent !important;
+    color: #f8fafc !important;
+}
+
+.solar-dropdown .Select-control {
+    min-height: 46px;
+    border-radius: 16px !important;
+    border: 1px solid rgba(245, 158, 11, 0.18) !important;
+    box-shadow: none !important;
+}
+
+.solar-dropdown .Select-menu-outer {
+    background: #10222b !important;
+    border: 1px solid rgba(245, 158, 11, 0.18) !important;
+}
+
+.solar-dropdown .VirtualizedSelectFocusedOption {
+    background: rgba(245, 158, 11, 0.16) !important;
+}
+
+.solar-graph {
+    min-height: 320px;
+}
+
+
+@media (max-width: 991.98px) {
+    .solar-signal-grid > div:nth-child(2n) .solar-signal-card,
+    .solar-signal-grid > div:nth-child(3n) .solar-signal-card,
+    .solar-rail-card-alt {
+        transform: none;
+    }
+}
+
+/* --- insurance multipage suite ----------------------------------------- */
+
+.insurance-suite {
+    min-height: 100vh;
+    background: #f3f5fa;
+    color: #344256;
+    font-family: "DM Sans", sans-serif;
+}
+
+.insurance-suite-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+.insurance-suite-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    padding: 1.3rem 1rem;
+    background: linear-gradient(180deg, #0a1628 0%, #102140 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    max-height: 100vh;
+    overflow-y: auto;
+}
+
+.insurance-brand,
+.insurance-sidebar-card,
+.insurance-panel-card,
+.insurance-table-card,
+.insurance-metric-card {
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.insurance-brand,
+.insurance-sidebar-card {
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.insurance-brand {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.insurance-brand-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.28), rgba(255, 255, 255, 0.06));
+    color: #c9a84c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+}
+
+.insurance-brand-accent,
+.insurance-brand-main {
+    font-family: "Syne", sans-serif;
+    font-size: 1.35rem;
+}
+
+.insurance-brand-accent {
+    color: #c9a84c;
+    font-weight: 800;
+}
+
+.insurance-brand-main {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.insurance-brand-subtitle,
+.insurance-sidebar-note,
+.insurance-side-stat-label,
+.insurance-filter-label,
+.insurance-rail-label {
+    color: rgba(255, 255, 255, 0.58);
+}
+
+.insurance-brand-subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
+}
+
+.insurance-sidebar-card {
+    padding: 1rem;
+}
+
+.insurance-rail-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.42);
+    margin-bottom: 0.8rem;
+}
+
+.insurance-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.insurance-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 0.95rem;
+    border-radius: 14px;
+    color: rgba(255, 255, 255, 0.66);
+    text-decoration: none;
+    font-weight: 500;
+    transition: 0.2s ease;
+}
+
+.insurance-nav-link:hover,
+.insurance-nav-link.is-active {
+    color: #c9a84c;
+    background: rgba(201, 168, 76, 0.12);
+}
+
+.insurance-nav-icon {
+    width: 16px;
+}
+
+.insurance-filter-block + .insurance-filter-block {
+    margin-top: 0.9rem;
+}
+
+.insurance-filter-label {
+    display: block;
+    margin-bottom: 0.45rem;
+    font-size: 0.8rem;
+}
+
+.insurance-select .Select-control,
+.insurance-select .Select-menu-outer,
+.insurance-select .Select-menu,
+.insurance-select .Select-placeholder,
+.insurance-select .Select-value-label,
+.insurance-select .Select-input > input,
+.insurance-select .VirtualizedSelectOption {
+    background: transparent !important;
+    color: #ffffff !important;
+}
+
+.insurance-select .Select-control {
+    min-height: 44px;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: none !important;
+}
+
+.insurance-select .Select-menu-outer {
+    background: #102140 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.insurance-side-stat + .insurance-side-stat {
+    margin-top: 0.75rem;
+}
+
+.insurance-side-stat-value {
+    color: #ffffff;
+    font-family: "Syne", sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.insurance-side-stat-label {
+    margin-top: 0.15rem;
+    font-size: 0.78rem;
+}
+
+.insurance-sidebar-note {
+    margin-top: 1rem;
+    font-size: 0.86rem;
+    line-height: 1.6;
+    border-left: 3px solid rgba(201, 168, 76, 0.45);
+    padding-left: 0.75rem;
+}
+
+.insurance-suite-main {
+    flex: 1;
+    min-width: 0;
+    padding: 1.4rem;
+}
+
+.insurance-topbar {
+    background: #ffffff;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 24px;
+    padding: 1.35rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.insurance-topbar-eyebrow {
+    color: #c9a84c;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.insurance-topbar-title {
+    margin: 0.4rem 0 0;
+    color: #1a1a2e;
+    font-family: "Syne", sans-serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+}
+
+.insurance-topbar-subtitle {
+    margin: 0.45rem 0 0;
+    color: #73839a;
+    max-width: 58ch;
+    line-height: 1.6;
+}
+
+.insurance-topbar-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.9rem;
+}
+
+.insurance-topbar-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.insurance-home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    background: #0a1628;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.insurance-home-link:hover {
+    background: #122544;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.insurance-topbar-date {
+    color: #73839a;
+    font-size: 0.85rem;
+}
+
+.insurance-export-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    background: #0a1628;
+    color: #ffffff;
+    border: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+.insurance-export-btn:hover {
+    background: #162a4a;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+.insurance-export-btn--excel {
+    background: #1a5c30;
+}
+.insurance-export-btn--excel:hover {
+    background: #226b39;
+}
+
+.insurance-topbar-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.insurance-topbar-badge {
+    padding: 0.52rem 0.8rem;
+    border-radius: 999px;
+    background: #f4f6fb;
+    color: #566577;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.insurance-topbar-badge-strong {
+    background: rgba(201, 168, 76, 0.14);
+    color: #8c6a13;
+}
+
+.insurance-page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.insurance-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.insurance-metric-card,
+.insurance-panel-card,
+.insurance-table-card {
+    border-radius: 22px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    background: #ffffff;
+}
+
+.insurance-metric-card {
+    padding: 1.2rem;
+}
+
+.insurance-metric-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-bottom: 0.9rem;
+}
+
+.tone-gold { background: rgba(201, 168, 76, 0.12); color: #c9a84c; }
+.tone-blue { background: rgba(21, 101, 192, 0.12); color: #1565c0; }
+.tone-green { background: rgba(26, 138, 90, 0.12); color: #1a8a5a; }
+.tone-red { background: rgba(211, 47, 47, 0.12); color: #d32f2f; }
+.tone-purple { background: rgba(108, 63, 197, 0.12); color: #6c3fc5; }
+.tone-orange { background: rgba(224, 138, 0, 0.12); color: #e08a00; }
+
+.insurance-metric-label {
+    color: #73839a;
+    font-size: 0.76rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.insurance-metric-value {
+    margin-top: 0.45rem;
+    color: #1a1a2e;
+    font-family: "Syne", sans-serif;
+    font-size: clamp(1.35rem, 1.6vw, 1.85rem);
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.insurance-metric-helper {
+    margin-top: 0.45rem;
+    color: #73839a;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.insurance-panel-card .card-body,
+.insurance-table-card .card-body {
+    padding: 1.25rem;
+}
+
+.insurance-panel-title {
+    color: #1a1a2e;
+    font-family: "Syne", sans-serif;
+    font-size: 1.02rem;
+    font-weight: 700;
+}
+
+.insurance-panel-subtitle {
+    color: #73839a;
+    margin: 0.25rem 0 0.95rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.insurance-graph {
+    min-height: 300px;
+}
+
+.insurance-graph-tall {
+    min-height: 340px;
+}
+
+.insurance-graph-medium {
+    min-height: 320px;
+}
+
+
+.insurance-table-card .dash-spreadsheet-container,
+.insurance-table-card .dash-spreadsheet-inner {
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+@keyframes insuranceFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.insurance-page-animate {
+    animation: insuranceFadeIn 0.32s ease both;
+}
+
+/* --- insurance overview hero -------------------------------------------- */
+
+.insurance-overview-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.9rem 2rem;
+    border-radius: 26px;
+    background: linear-gradient(135deg, #0a1628 0%, #102140 55%, #152d58 100%);
+    border: 1px solid rgba(201, 168, 76, 0.18);
+    position: relative;
+    overflow: hidden;
+}
+
+.insurance-overview-hero::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.16), transparent 68%);
+    pointer-events: none;
+}
+
+.insurance-overview-hero::after {
+    content: "";
+    position: absolute;
+    bottom: -40px;
+    left: 35%;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(21, 101, 192, 0.10), transparent 68%);
+    pointer-events: none;
+}
+
+.insurance-overview-hero-left {
+    flex: 1;
+    min-width: 240px;
+    position: relative;
+    z-index: 1;
+}
+
+.insurance-overview-kicker {
+    display: inline-block;
+    font-size: 0.71rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #c9a84c;
+    font-weight: 700;
+    margin-bottom: 0.55rem;
+}
+
+.insurance-overview-hero-title {
+    color: #ffffff;
+    font-family: "Syne", sans-serif;
+    font-size: clamp(1.55rem, 2.8vw, 2.15rem);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.insurance-overview-hero-copy {
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.9rem;
+    line-height: 1.65;
+    margin: 0.65rem 0 0;
+    max-width: 52ch;
+}
+
+.insurance-overview-hero-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    padding: 1rem 0.25rem;
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
+}
+
+.insurance-overview-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0.85rem;
+    min-width: 0;
+}
+
+.insurance-overview-stat-sep {
+    width: 1px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.insurance-overview-stat-value {
+    color: #ffffff;
+    font-family: "Syne", sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.insurance-overview-stat-label {
+    margin-top: 0.35rem;
+    color: rgba(255, 255, 255, 0.50);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-align: center;
+}
+
+
+@media (max-width: 1100px) {
+    .insurance-suite-shell {
+        flex-direction: column;
+    }
+
+    .insurance-suite-sidebar {
+        width: auto;
+        min-height: auto;
+        position: static;
+    }
+}
+
+@media (max-width: 1150px) {
+    .insurance-overview-hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .insurance-overview-hero-right {
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.85rem 0.5rem;
+    }
+
+    .insurance-overview-stat {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .insurance-overview-stat-sep {
+        display: none;
+    }
+}
+
+@media (max-width: 900px) {
+    .insurance-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .insurance-suite-main {
+        padding: 1rem;
+    }
+
+    .insurance-topbar {
+        flex-direction: column;
+    }
+
+    .insurance-topbar-side {
+        align-items: flex-start;
+    }
+
+    .insurance-topbar-meta {
+        justify-content: flex-start;
+    }
+
+    .insurance-topbar-badges {
+        justify-content: flex-start;
+    }
+
+    .insurance-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .insurance-graph,
+    .insurance-graph-tall,
+    .insurance-graph-medium {
+        min-height: 260px;
+    }
+}
+
+
+
+
+
+/* --- insurance suite content width ------------------------------------ */
+
+.insurance-suite-content {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    overflow-x: hidden;
+}

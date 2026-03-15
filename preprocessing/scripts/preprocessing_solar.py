@@ -1,4 +1,4 @@
-﻿"""Solar dataset preprocessing utilities."""
+"""Solar dataset preprocessing utilities."""
 
 from __future__ import annotations
 
@@ -9,8 +9,17 @@ from typing import Iterable
 import pandas as pd
 
 LOGGER = logging.getLogger(__name__)
+SOLAR_FILE_CANDIDATES = (
+    "salar.csv",
+    "salar_data.csv",
+    "solar_dataset.csv",
+)
 
 DIRECT_PRODUCTION_COLUMNS = {
+    "ac_power",
+    "dc_power",
+    "daily_yield",
+    "total_yield",
     "production_kwh",
     "energy_produced",
     "solar_output",
@@ -25,6 +34,9 @@ DIRECT_CAPACITY_COLUMNS = {
     "capacity",
     "panel_capacity",
 }
+
+DIRECT_EFFICIENCY_NUMERATOR_COLUMNS = {"ac_power"}
+DIRECT_EFFICIENCY_DENOMINATOR_COLUMNS = {"dc_power"}
 
 
 def normalize_column_name(column_name: str) -> str:
@@ -70,6 +82,40 @@ def read_delimited_csv(csv_path: Path) -> pd.DataFrame:
     dataframe = pd.read_csv(csv_path, sep=None, engine="python")
     dataframe.columns = [normalize_column_name(column) for column in dataframe.columns]
     return dataframe
+
+
+def resolve_solar_csv_path(data_directory: Path) -> Path:
+    """Resolve the solar CSV path while preferring the corrected salar dataset.
+
+    Purpose:
+        Keep the ingestion script compatible with the current repository layout
+        where the corrected solar file may live either in the project folder or
+        in the workspace-level ``solar_data`` directory.
+
+    Inputs:
+        data_directory: Base solar data directory passed by the ingestion
+            pipeline.
+
+    Outputs:
+        The first matching CSV path.
+    """
+
+    search_directories = [data_directory]
+    workspace_solar_directory = data_directory.parent.parent / "solar_data"
+    if workspace_solar_directory != data_directory:
+        search_directories.append(workspace_solar_directory)
+
+    for directory in search_directories:
+        for candidate_name in SOLAR_FILE_CANDIDATES:
+            candidate_path = directory / candidate_name
+            if candidate_path.exists():
+                return candidate_path
+
+    candidate_list = ", ".join(SOLAR_FILE_CANDIDATES)
+    searched = ", ".join(str(directory) for directory in search_directories)
+    raise FileNotFoundError(
+        f"Missing solar dataset. Expected one of [{candidate_list}] in {searched}."
+    )
 
 
 def convert_numeric_columns(dataframe: pd.DataFrame, columns: Iterable[str]) -> pd.DataFrame:
@@ -161,6 +207,36 @@ def build_weather_based_efficiency(dataframe: pd.DataFrame) -> pd.Series:
     return stacked.mean(axis=1)
 
 
+def build_power_conversion_efficiency(dataframe: pd.DataFrame) -> pd.Series:
+    """Compute an AC/DC conversion efficiency for direct solar telemetry.
+
+    Purpose:
+        Use the true solar production fields when the dataset exposes both DC
+        input power and AC output power. Zero-production rows remain available
+        for the dashboard, but their efficiency is left undefined.
+
+    Inputs:
+        dataframe: Solar DataFrame after numeric conversion.
+
+    Outputs:
+        An efficiency ratio expressed as a percentage.
+    """
+
+    numerator_column = next(
+        column
+        for column in dataframe.columns
+        if column in DIRECT_EFFICIENCY_NUMERATOR_COLUMNS
+    )
+    denominator_column = next(
+        column
+        for column in dataframe.columns
+        if column in DIRECT_EFFICIENCY_DENOMINATOR_COLUMNS
+    )
+    return dataframe[numerator_column].divide(
+        dataframe[denominator_column].where(dataframe[denominator_column] > 0)
+    ).multiply(100)
+
+
 def compute_annual_growth(dataframe: pd.DataFrame, metric_column: str) -> pd.Series:
     """Compute annual growth for a selected metric.
 
@@ -178,7 +254,7 @@ def compute_annual_growth(dataframe: pd.DataFrame, metric_column: str) -> pd.Ser
 
     annual_metric = dataframe.groupby("year")[metric_column].mean().sort_index()
     annual_growth = annual_metric.pct_change().fillna(0.0)
-    return dataframe["year"].map(annual_growth)
+    return dataframe["year"].map(annual_growth).fillna(0.0)
 
 
 def preprocess_solar_data(data_directory: Path) -> pd.DataFrame:
@@ -189,38 +265,67 @@ def preprocess_solar_data(data_directory: Path) -> pd.DataFrame:
         indicators and return a MongoDB-ready DataFrame.
 
     Inputs:
-        data_directory: Directory containing ``solar_dataset.csv``.
+        data_directory: Directory containing the solar CSV files.
 
     Outputs:
         A cleaned and enriched solar DataFrame.
     """
 
-    csv_path = data_directory / "solar_dataset.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Missing solar dataset: {csv_path}")
+    csv_path = resolve_solar_csv_path(data_directory)
 
     LOGGER.info("Loading solar dataset from '%s'.", csv_path)
     dataframe = read_delimited_csv(csv_path)
 
-    if "date" not in dataframe.columns:
-        raise ValueError("The solar dataset must contain a 'date' column.")
+    if "datetime" in dataframe.columns:
+        dataframe["timestamp"] = pd.to_datetime(
+            dataframe["datetime"],
+            errors="coerce",
+            dayfirst=True,
+        )
+    elif "date" in dataframe.columns and "time" in dataframe.columns:
+        dataframe["timestamp"] = pd.to_datetime(
+            dataframe["date"].astype(str).str.strip() + " " + dataframe["time"].astype(str).str.strip(),
+            errors="coerce",
+            dayfirst=True,
+        )
+    elif "date" in dataframe.columns:
+        dataframe["timestamp"] = pd.to_datetime(
+            dataframe["date"],
+            errors="coerce",
+            dayfirst=True,
+        )
+    else:
+        raise ValueError("The solar dataset must contain either 'datetime' or 'date'.")
 
     dataframe["date"] = pd.to_datetime(
-        dataframe["date"],
+        dataframe["date"] if "date" in dataframe.columns else dataframe["timestamp"],
         errors="coerce",
         dayfirst=True,
     )
+    dataframe["date"] = dataframe["date"].fillna(dataframe["timestamp"].dt.normalize())
 
     numeric_candidates = [
         column
         for column in dataframe.columns
-        if column != "date" and dataframe[column].dtype == "object"
+        if column not in {"date", "datetime", "timestamp", "country"}
     ]
     dataframe = convert_numeric_columns(dataframe, numeric_candidates)
 
-    dataframe = dataframe.dropna(subset=["date"]).dropna(how="all")
+    dataframe = dataframe.dropna(subset=["timestamp"]).dropna(how="all")
 
-    if DIRECT_PRODUCTION_COLUMNS.intersection(dataframe.columns):
+    if "country" in dataframe.columns:
+        dataframe["company"] = dataframe["country"].fillna("Solar Portfolio")
+    else:
+        dataframe["company"] = "Solar Portfolio"
+    dataframe["company"] = dataframe["company"].astype(str).str.strip()
+
+    if (
+        DIRECT_EFFICIENCY_NUMERATOR_COLUMNS.intersection(dataframe.columns)
+        and DIRECT_EFFICIENCY_DENOMINATOR_COLUMNS.intersection(dataframe.columns)
+    ):
+        dataframe["production_efficiency"] = build_power_conversion_efficiency(dataframe)
+        dataframe["production_efficiency_source"] = "ac_dc_ratio"
+    elif DIRECT_PRODUCTION_COLUMNS.intersection(dataframe.columns):
         production_column = next(
             column for column in dataframe.columns if column in DIRECT_PRODUCTION_COLUMNS
         )
@@ -240,11 +345,15 @@ def preprocess_solar_data(data_directory: Path) -> pd.DataFrame:
         dataframe["production_efficiency"] = build_weather_based_efficiency(dataframe)
         dataframe["production_efficiency_source"] = "weather_proxy"
 
-    dataframe = dataframe.dropna(subset=["production_efficiency"]).copy()
-    dataframe["year"] = dataframe["date"].dt.year
-    dataframe["month"] = dataframe["date"].dt.month
-    dataframe["annual_growth"] = compute_annual_growth(dataframe, "production_efficiency")
+    dataframe = dataframe.copy()
+    dataframe["year"] = dataframe["timestamp"].dt.year.astype("Int64")
+    dataframe["month"] = dataframe["timestamp"].dt.month.astype("Int64")
+    dataframe["day"] = dataframe["timestamp"].dt.day.astype("Int64")
+    dataframe["hour"] = dataframe["timestamp"].dt.hour.astype("Int64")
 
-    dataframe = dataframe.sort_values("date").reset_index(drop=True)
+    growth_metric_column = "daily_yield" if "daily_yield" in dataframe.columns else "production_efficiency"
+    dataframe["annual_growth"] = compute_annual_growth(dataframe, growth_metric_column)
+
+    dataframe = dataframe.sort_values("timestamp").reset_index(drop=True)
     LOGGER.info("Solar preprocessing completed with %s rows.", len(dataframe))
     return dataframe

@@ -1,15 +1,18 @@
-﻿"""MongoDB-backed data loaders for the dashboard application."""
+"""MongoDB-backed data loaders for the dashboard application."""
 
 from __future__ import annotations
 
 import logging
+import time
 from typing import Iterable
 
 import pandas as pd
 
-from database.mongo_connection import get_database
+from database.mongo_connection import get_database, reset_mongo_client
 
 LOGGER = logging.getLogger(__name__)
+LOAD_RETRY_ATTEMPTS = 3
+LOAD_RETRY_DELAY_SECONDS = 1.0
 
 
 def _convert_datetime_columns(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -169,16 +172,36 @@ def _load_collection(
         A cleaned pandas DataFrame.
     """
 
-    database = get_database()
-    records = list(database[collection_name].find({}, {"_id": 0}))
-    dataframe = pd.DataFrame(records)
-    return _finalize_dataframe(
-        dataframe=dataframe,
-        collection_name=collection_name,
-        company_candidates=company_candidates,
-        year_candidates=year_candidates,
-        fallback_company=fallback_company,
-    )
+    last_exception: Exception | None = None
+
+    for attempt in range(1, LOAD_RETRY_ATTEMPTS + 1):
+        try:
+            database = get_database(force_refresh=attempt > 1)
+            records = list(database[collection_name].find({}, {"_id": 0}))
+            dataframe = pd.DataFrame(records)
+            return _finalize_dataframe(
+                dataframe=dataframe,
+                collection_name=collection_name,
+                company_candidates=company_candidates,
+                year_candidates=year_candidates,
+                fallback_company=fallback_company,
+            )
+        except Exception as exc:  # noqa: BLE001
+            last_exception = exc
+            LOGGER.warning(
+                "Loading collection '%s' failed on attempt %s/%s: %s",
+                collection_name,
+                attempt,
+                LOAD_RETRY_ATTEMPTS,
+                exc,
+            )
+            reset_mongo_client()
+            if attempt < LOAD_RETRY_ATTEMPTS:
+                time.sleep(LOAD_RETRY_DELAY_SECONDS)
+
+    if last_exception is None:
+        raise RuntimeError(f"Unable to load MongoDB collection '{collection_name}'.")
+    raise last_exception
 
 
 def load_banking_data() -> pd.DataFrame:
@@ -219,7 +242,7 @@ def load_solar_data() -> pd.DataFrame:
 
     return _load_collection(
         collection_name="solar_energy_data",
-        company_candidates=["company", "plant_name", "site_name"],
+        company_candidates=["company", "country", "plant_name", "site_name"],
         year_candidates=["year", "date"],
         fallback_company="Solar Portfolio",
     )

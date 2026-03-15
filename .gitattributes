@@ -1,0 +1,17 @@
+* text=auto eol=lf
+
+*.py text diff=python
+*.md text
+*.yml text
+*.yaml text
+*.html text
+*.css text
+*.js text
+*.csv text
+
+*.pdf binary
+*.xlsx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
