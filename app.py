@@ -747,6 +747,10 @@ def register_navigation_routes(server: Flask) -> None:
         {"icon": '<i class="fa-brands fa-html5"></i>', "name": "HTML / CSS", "role": "Design \u00b7 UX/UI"},
     ]
 
+    @server.route("/healthz")
+    def healthcheck() -> tuple[str, int]:
+        return "ok", 200
+
     @server.route("/")
     def home() -> str:
         dataset_states = load_application_data(refresh_if_unavailable=False)
@@ -828,14 +832,14 @@ def mount_dashboards(server: Flask) -> dict[str, object]:
         "banking": create_banking_dashboard(
             server,
             callback_dataframe_provider=_build_dataframe_provider("banking", refresh_if_unavailable=True),
-            error_provider=_build_error_provider("banking", refresh_if_unavailable=True),
-            layout_dataframe_provider=_build_dataframe_provider("banking", refresh_if_unavailable=True),
+            error_provider=_build_error_provider("banking", refresh_if_unavailable=False),
+            layout_dataframe_provider=_build_dataframe_provider("banking", refresh_if_unavailable=False),
         ),
         "insurance": create_insurance_dashboard(
             server,
             callback_dataframe_provider=_build_dataframe_provider("insurance", refresh_if_unavailable=True),
-            error_provider=_build_error_provider("insurance", refresh_if_unavailable=True),
-            layout_dataframe_provider=_build_dataframe_provider("insurance", refresh_if_unavailable=True),
+            error_provider=_build_error_provider("insurance", refresh_if_unavailable=False),
+            layout_dataframe_provider=_build_dataframe_provider("insurance", refresh_if_unavailable=False),
         ),
     }
 
@@ -852,6 +856,5 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", "8050")),
         debug=os.getenv("DASH_DEBUG", "false").lower() == "true",
     )
-
 
 
