@@ -90,6 +90,25 @@ python app.py
 
 L'application demarre par defaut sur `http://127.0.0.1:8050`.
 
+## Deploy sur Render
+
+Le depot contient maintenant une configuration Render prete a l'emploi:
+
+- `render.yaml`: service web Python avec `gunicorn app:server`
+- `.python-version`: verrouillage Python sur `3.13.5`
+
+Etapes:
+
+1. Pousser le depot sur GitHub.
+2. Dans Render, creer un Blueprint ou un Web Service depuis ce repo.
+3. Renseigner la variable `MONGO_URI` lors de la creation du service.
+
+Commande de demarrage attendue:
+
+```bash
+gunicorn app:server --bind 0.0.0.0:$PORT
+```
+
 ## Lancer le pipeline de preprocessing / ingestion
 
 Preprocessing + ingestion MongoDB:
