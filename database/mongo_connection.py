@@ -91,7 +91,7 @@ def reset_mongo_client() -> None:
 def get_mongo_client(
     mongo_uri: str | None = None,
     app_name: str = "BankDataVizWebApp",
-    server_selection_timeout_ms: int = 6_000,
+    server_selection_timeout_ms: int = 1_500,
     *,
     force_refresh: bool = False,
 ) -> MongoClient:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+import time
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Callable
@@ -16,6 +17,7 @@ from dashboards.banking_dashboard import create_banking_dashboard
 from dashboards.insurance_dashboard import create_insurance_dashboard
 from dashboards.solar_page import render_solar_observatory_page
 from database.data_loader import load_banking_data, load_insurance_data, load_solar_data
+from preprocessing.scripts.preprocessing_insurance import preprocess_insurance_data
 from preprocessing.scripts.preprocessing_solar import preprocess_solar_data
 
 LOGGER = logging.getLogger(__name__)
@@ -31,14 +33,21 @@ class DatasetState:
     name: str
     dataframe: pd.DataFrame
     error_message: str | None = None
+    last_refresh_attempt_at: float = 0.0
 
 
 class DatasetRegistry:
     """Keep MongoDB datasets warm and reload them after transient failures."""
 
-    def __init__(self, loaders: dict[str, DataLoader], fallback_loaders: dict[str, DataLoader] | None = None) -> None:
+    def __init__(
+        self,
+        loaders: dict[str, DataLoader],
+        fallback_loaders: dict[str, DataLoader] | None = None,
+        retry_cooldown_seconds: float = 60.0,
+    ) -> None:
         self._loaders = loaders
         self._fallback_loaders = fallback_loaders or {}
+        self._retry_cooldown_seconds = retry_cooldown_seconds
         self._states = {
             name: DatasetState(name=name, dataframe=pd.DataFrame())
             for name in loaders
@@ -50,7 +59,15 @@ class DatasetRegistry:
 
         with self._lock:
             state = self._states[name]
-            should_refresh = refresh_if_unavailable and (state.error_message is not None or state.dataframe.empty)
+            failure_is_recent = (
+                state.error_message is not None
+                and state.last_refresh_attempt_at > 0
+                and (time.monotonic() - state.last_refresh_attempt_at) < self._retry_cooldown_seconds
+            )
+            should_refresh = refresh_if_unavailable and (
+                state.dataframe.empty
+                or (state.error_message is not None and not failure_is_recent)
+            )
 
         if should_refresh:
             return self.refresh(name, force=True)
@@ -67,6 +84,7 @@ class DatasetRegistry:
             state = self._states[name]
             if not force and state.error_message is None and not state.dataframe.empty:
                 return state
+            state.last_refresh_attempt_at = time.monotonic()
 
         try:
             dataframe = loader()
@@ -633,6 +651,11 @@ def load_local_solar_data() -> pd.DataFrame:
     return preprocess_solar_data(solar_directory)
 
 
+def load_local_insurance_data() -> pd.DataFrame:
+    insurance_directory = Path(__file__).resolve().parent / "preprocessing" / "insurance_data"
+    return preprocess_insurance_data(insurance_directory)
+
+
 DATASET_LOADERS: dict[str, DataLoader] = {
     "banking": load_banking_data,
     "solar": load_solar_data,
@@ -640,6 +663,7 @@ DATASET_LOADERS: dict[str, DataLoader] = {
 }
 DATASET_FALLBACK_LOADERS: dict[str, DataLoader] = {
     "solar": load_local_solar_data,
+    "insurance": load_local_insurance_data,
 }
 DATASET_REGISTRY = DatasetRegistry(DATASET_LOADERS, fallback_loaders=DATASET_FALLBACK_LOADERS)
 
@@ -856,5 +880,4 @@ if __name__ == "__main__":
         port=int(os.getenv("PORT", "8050")),
         debug=os.getenv("DASH_DEBUG", "false").lower() == "true",
     )
-
 

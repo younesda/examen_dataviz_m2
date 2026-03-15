@@ -11,7 +11,7 @@ import pandas as pd
 from database.mongo_connection import get_database, reset_mongo_client
 
 LOGGER = logging.getLogger(__name__)
-LOAD_RETRY_ATTEMPTS = 3
+LOAD_RETRY_ATTEMPTS = 1
 LOAD_RETRY_DELAY_SECONDS = 1.0
 
 
